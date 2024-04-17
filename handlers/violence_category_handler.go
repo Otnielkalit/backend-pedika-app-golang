@@ -26,6 +26,27 @@ func GetAllViolenceCategories(c *fiber.Ctx) error {
 	})
 }
 
+func GetViolenceCategoryByID(c *fiber.Ctx) error {
+    categoryID := c.Params("id")
+
+    var category models.ViolenceCategory
+    if err := database.DB.First(&category, categoryID).Error; err != nil {
+        return c.Status(http.StatusNotFound).JSON(helper.ResponseWithOutData{
+            Code:    http.StatusNotFound,
+            Status:  "error",
+            Message: "Violence category not found",
+        })
+    }
+
+    return c.Status(http.StatusOK).JSON(helper.ResponseWithData{
+        Code:    http.StatusOK,
+        Status:  "success",
+        Message: "Violence category details",
+        Data:    category,
+    })
+}
+
+
 func CreateViolenceCategory(c *fiber.Ctx) error {
 	var category models.ViolenceCategory
 	if err := c.BodyParser(&category); err != nil {

@@ -7,14 +7,13 @@ import (
 	"backend-pedika-fiber/models"
 	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/datatypes"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/datatypes"
 )
 
 var mu sync.Mutex
@@ -154,6 +153,7 @@ func convertToRoman(month int) string {
 	return ""
 }
 
+
 func GetUserReports(c *fiber.Ctx) error {
 	userID, err := auth.ExtractUserIDFromToken(c.Get("Authorization"))
 	if err != nil {
@@ -182,6 +182,7 @@ func GetUserReports(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
+
 
 func GetReportsByUserID(userID uint) ([]models.Laporan, error) {
 	var reports []models.Laporan

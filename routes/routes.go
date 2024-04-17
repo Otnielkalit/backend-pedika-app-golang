@@ -13,7 +13,7 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Use(middleware.AdminMiddleware)
 
 	adminGroup.Get("/profile", handlers.GetUserProfile)
-	adminGroup.Put("/edit-profile", handlers.EditProfile)
+	adminGroup.Put("/edit-profile", handlers.UpdateUserProfile)
 
 	adminGroup.Get("/violence-categories", handlers.GetAllViolenceCategories)
 	adminGroup.Post("/violence-categories", handlers.CreateViolenceCategory)
@@ -38,12 +38,16 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Use(middleware.MasyarakatMiddleware)
 
 	masyarakatGroup.Get("/profile", handlers.GetUserProfile)
+	masyarakatGroup.Put("/edit-profile", handlers.UpdateUserProfile)
 
 	masyarakatGroup.Get("/hello", handlers.HelloMasyarakat)
 	masyarakatGroup.Get("/kategori-kekerasan", handlers.GetAllViolenceCategories)
+	masyarakatGroup.Get("/kategori-kekerasan/:id", handlers.GetViolenceCategoryByID)
 
 	masyarakatGroup.Get("/laporan", handlers.GetUserReports)
 	masyarakatGroup.Post("/create-laporan", handlers.CreateLaporan)
+
+	masyarakatGroup.Get("/content", handlers.GetAllContents)
 }
 
 /*========= ||  Endpoint bisa di akses tanpa login || ====================*/

@@ -63,16 +63,27 @@ func RegisterUser(c *fiber.Ctx) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
+	// Set default value "" for PhotoProfile if not provided
+	if user.PhotoProfile == "" {
+		user.PhotoProfile = ""
+	}
+
+	// Set default value "" for TempatLahir, TanggalLahir, JenisKelamin if not provided
+	if user.TempatLahir == "" {
+		user.TempatLahir = ""
+	}
+	if user.TanggalLahir.IsZero() {
+		user.TanggalLahir = time.Time{}
+	}
+	if user.JenisKelamin == "" {
+		user.JenisKelamin = ""
+	}
+
 	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Failed to hash password", Data: nil})
 	}
 	user.Password = hashedPassword
-
-	// Set default value "" for PhotoProfile if not provided
-	if user.PhotoProfile == "" {
-		user.PhotoProfile = ""
-	}
 
 	userID, err := saveUserToDatabase(&user)
 	if err != nil {
