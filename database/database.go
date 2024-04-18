@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -22,10 +22,10 @@ var (
 func getDB() *sql.DB {
 	dbOnce.Do(func() {
 		var err error
-		err = godotenv.Load()
-		if err != nil {
-			log.Fatal("Error loading .env file")
-		}
+		// err = godotenv.Load()
+		// if err != nil {
+		// 	log.Fatal("Error loading .env file")
+		// }
 
 		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
 			os.Getenv("DB_USERNAME"),
