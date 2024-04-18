@@ -53,4 +53,5 @@ func SetMasyarakatRoutes(app *fiber.App) {
 /*========= ||  Endpoint bisa di akses tanpa login || ====================*/
 func RoutesWithOutLogin(app *fiber.App) {
 	app.Get("/api/emergency-contact", handlers.EmergencyContact)
+	app.Get("/hello", handlers.HelloMasyarakat)
 }
