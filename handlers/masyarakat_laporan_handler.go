@@ -7,15 +7,18 @@ import (
 	"backend-pedika-fiber/models"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/datatypes"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
+/*=========================== USER CREATE LAPORAN =======================*/
 var mu sync.Mutex
 
 func CreateLaporan(c *fiber.Ctx) error {
@@ -38,7 +41,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
-
 	form, err := c.MultipartForm()
 	if err != nil {
 		log.Printf("Error retrieving multipart form: %v", err)
@@ -67,7 +69,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 	alamatTKP := models.AlamatTKP{
-		NoRegistrasi: noRegistrasi,
 		Provinsi:     c.FormValue("provinsi"),
 		Kabupaten:    c.FormValue("kabupaten"),
 		Kecamatan:    c.FormValue("kecamatan"),
@@ -88,21 +89,10 @@ func CreateLaporan(c *fiber.Ctx) error {
 	laporan.UserID = uint(userID)
 	laporan.CreatedAt = time.Now()
 	laporan.UpdatedAt = time.Now()
-
-	idViolenceCategoryStr := c.FormValue("id_violence_category")
-
-	idViolenceCategory, err := strconv.Atoi(idViolenceCategoryStr)
-	if err != nil {
-		response := helper.ResponseWithOutData{
-			Code:    http.StatusBadRequest,
-			Status:  "error",
-			Message: "Invalid ID Violence Category",
-		}
-		return c.Status(http.StatusBadRequest).JSON(response)
-	}
-	laporan.IDViolenceCategory = idViolenceCategory
+	laporan.KategoriKekerasan = c.FormValue("kategori_kekerasan")
 	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
 	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
+
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
@@ -115,7 +105,21 @@ func CreateLaporan(c *fiber.Ctx) error {
 		Code:    http.StatusCreated,
 		Status:  "success",
 		Message: "Laporan created successfully",
-		Data:    laporan,
+		Data: fiber.Map{
+			"no_registrasi":         laporan.NoRegistrasi,
+			"user_id":               laporan.UserID,
+			"kategori_kekerasan":    laporan.KategoriKekerasan,
+			"tanggal_pelaporan":     laporan.TanggalPelaporan,
+			"tanggal_kejadian":      laporan.TanggalKejadian,
+			"kategori_lokasi_kasus": laporan.KategoriLokasiKasus,
+			"id_alamat_tkp":         laporan.IDAlamatTKP,
+			"kronologis_kasus":      laporan.KronologisKasus,
+			"dokumentasi": fiber.Map{
+				"urls": imageURLs,
+			},
+			"created_at": laporan.CreatedAt,
+			"updated_at": laporan.UpdatedAt,
+		},
 	}
 	return c.Status(http.StatusCreated).JSON(response)
 }
@@ -153,7 +157,7 @@ func convertToRoman(month int) string {
 	return ""
 }
 
-
+/*=========================== AMBIL SEMUA  LAPORAN SETIAP BERDASARKAN USER YANG LOGIN=======================*/
 func GetUserReports(c *fiber.Ctx) error {
 	userID, err := auth.ExtractUserIDFromToken(c.Get("Authorization"))
 	if err != nil {
@@ -173,21 +177,96 @@ func GetUserReports(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
-
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "User reports retrieved successfully",
+		Message: "List of laporan by user",
 		Data:    reports,
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
 
-
-func GetReportsByUserID(userID uint) ([]models.Laporan, error) {
+func GetReportsByUserID(userID uint) ([]map[string]interface{}, error) {
 	var reports []models.Laporan
-	if err := database.GetGormDBInstance().Where("user_id = ?", userID).Find(&reports).Error; err != nil {
+	if err := database.GetGormDBInstance().
+		Where("user_id = ?", userID).
+		Find(&reports).Error; err != nil {
 		return nil, err
 	}
-	return reports, nil
+
+	var formattedReports []map[string]interface{}
+	for _, report := range reports {
+		formattedReport := map[string]interface{}{
+			"no_registrasi":         report.NoRegistrasi,
+			"user_id":               report.UserID,
+			"kategori_kekerasan":    report.KategoriKekerasan,
+			"tanggal_pelaporan":     report.TanggalPelaporan,
+			"tanggal_kejadian":      report.TanggalKejadian,
+			"kategori_lokasi_kasus": report.KategoriLokasiKasus,
+			"id_alamat_tkp":         report.IDAlamatTKP,
+			"kronologis_kasus":      report.KronologisKasus,
+			"dokumentasi":           report.Dokumentasi,
+			"created_at":            report.CreatedAt,
+			"updated_at":            report.UpdatedAt,
+		}
+		formattedReports = append(formattedReports, formattedReport)
+	}
+
+	return formattedReports, nil
 }
+
+/*=========================== TAMPILKAN DETAIL LAPORAN USER BERDASARKAN NO_REGISTRASI =======================*/
+// GetReportDetail adalah handler untuk mendapatkan detail laporan berdasarkan no registrasi dan pengguna yang login
+func GetReportDetail(c *fiber.Ctx) error {
+	// Extract user ID from token
+	userID, err := auth.ExtractUserIDFromToken(c.Get("Authorization"))
+	if err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusUnauthorized,
+			Status:  "error",
+			Message: "Unauthorized",
+		}
+		return c.Status(http.StatusUnauthorized).JSON(response)
+	}
+
+	noRegistrasi := c.Params("no_registrasi")
+	if noRegistrasi == "" {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "No registration number provided",
+		}
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	var laporan models.Laporan
+	if err := database.GetGormDBInstance().
+		Where("laporans.no_registrasi = ? AND user_id = ?", noRegistrasi, userID).
+		Preload("AlamatTKP").
+		Preload("User").
+		First(&laporan).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusNotFound,
+				Status:  "error",
+				Message: "Report not found",
+			}
+			return c.Status(http.StatusNotFound).JSON(response)
+		}
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to fetch report detail",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Report detail retrieved successfully",
+		Data:    laporan,
+	}
+	return c.Status(http.StatusOK).JSON(response)
+}
+
