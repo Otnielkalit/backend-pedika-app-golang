@@ -216,51 +216,27 @@ func GetReportsByUserID(userID uint) ([]map[string]interface{}, error) {
 }
 
 /*=========================== TAMPILKAN DETAIL LAPORAN USER BERDASARKAN NO_REGISTRASI =======================*/
-// GetReportDetail adalah handler untuk mendapatkan detail laporan berdasarkan no registrasi dan pengguna yang login
-func GetReportDetail(c *fiber.Ctx) error {
-	// Extract user ID from token
-	userID, err := auth.ExtractUserIDFromToken(c.Get("Authorization"))
-	if err != nil {
-		response := helper.ResponseWithOutData{
-			Code:    http.StatusUnauthorized,
-			Status:  "error",
-			Message: "Unauthorized",
-		}
-		return c.Status(http.StatusUnauthorized).JSON(response)
-	}
-
+func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 	noRegistrasi := c.Params("no_registrasi")
-	if noRegistrasi == "" {
-		response := helper.ResponseWithOutData{
-			Code:    http.StatusBadRequest,
-			Status:  "error",
-			Message: "No registration number provided",
-		}
-		return c.Status(http.StatusBadRequest).JSON(response)
-	}
-
 	var laporan models.Laporan
 	if err := database.GetGormDBInstance().
-		Where("laporans.no_registrasi = ? AND user_id = ?", noRegistrasi, userID).
+		Where("laporans.no_registrasi = ?", noRegistrasi).
 		Preload("AlamatTKP").
 		Preload("User").
 		First(&laporan).Error; err != nil {
+		status := http.StatusInternalServerError
+		message := "Failed to fetch report detail"
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			response := helper.ResponseWithOutData{
-				Code:    http.StatusNotFound,
-				Status:  "error",
-				Message: "Report not found",
-			}
-			return c.Status(http.StatusNotFound).JSON(response)
+			status = http.StatusNotFound
+			message = "Report not found"
 		}
 		response := helper.ResponseWithOutData{
-			Code:    http.StatusInternalServerError,
+			Code:    status,
 			Status:  "error",
-			Message: "Failed to fetch report detail",
+			Message: message,
 		}
-		return c.Status(http.StatusInternalServerError).JSON(response)
+		return c.Status(status).JSON(response)
 	}
-
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
@@ -269,4 +245,3 @@ func GetReportDetail(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
-

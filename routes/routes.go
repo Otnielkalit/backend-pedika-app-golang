@@ -28,6 +28,11 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Put("/edit-content/:id", handlers.UpdateContent)
 	adminGroup.Delete("/delete-content/:id", handlers.DeleteContent)
 
+	adminGroup.Get("/event", handlers.GetAllEvent)
+	adminGroup.Post("/create-event", handlers.CreateEvent)
+	adminGroup.Put("/edit-event/:id", handlers.UpdateEvent)
+	adminGroup.Delete("/delete-event/:id", handlers.DeleteEvent)
+
 	adminGroup.Get("/laporan", handlers.GetLatestReports)
 	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
 }
@@ -43,9 +48,13 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Get("/kategori-kekerasan", handlers.GetAllViolenceCategories)
 	masyarakatGroup.Get("/kategori-kekerasan/:id", handlers.GetViolenceCategoryByID)
 
-	masyarakatGroup.Get("/laporan", handlers.GetUserReports)
-	masyarakatGroup.Get("/detail-laporan/:no_register", handlers.GetReportDetail)
 	masyarakatGroup.Post("/buat-laporan", handlers.CreateLaporan)
+	masyarakatGroup.Get("/laporan", handlers.GetUserReports)
+	masyarakatGroup.Get("/detail-laporan/:no_registrasi", handlers.GetReportByNoRegistrasi)
+
+	masyarakatGroup.Post("/pelaku-kekerasan", handlers.CreatePelaku)
+	masyarakatGroup.Put("/pelaku-kekerasan/:id", handlers.UpdatePelaku)
+	masyarakatGroup.Delete("/pelaku-kekerasan/:id", handlers.DeletePelaku)
 
 	masyarakatGroup.Get("/content", handlers.GetAllContents)
 }

@@ -13,8 +13,12 @@ func RunMigration() {
 		&models.EmergencyContact{},
 		&models.Content{},
 		&models.Laporan{},
-		&models.AlamatTKP{})
+		&models.AlamatTKP{},
+		&models.Event{},
+		&models.AlamatPelaku{},
+		&models.Pelaku{})
 	if err != nil {
 		log.Println(err)
 	}
+
 }

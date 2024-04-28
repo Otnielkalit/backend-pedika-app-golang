@@ -21,6 +21,7 @@ func SaveImage(file io.Reader, filename, folderPath string) (string, error) {
 	return filePath, nil
 }
 
+
 func DeleteImage(filePath string) error {
 	err := os.Remove(filePath)
 	if err != nil {
