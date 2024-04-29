@@ -92,6 +92,7 @@ func CreateLaporan(c *fiber.Ctx) error {
 	laporan.KategoriKekerasan = c.FormValue("kategori_kekerasan")
 	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
 	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
+	laporan.TanggalKejadian = time.Now()
 
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
