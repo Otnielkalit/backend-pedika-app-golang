@@ -92,7 +92,17 @@ func CreateLaporan(c *fiber.Ctx) error {
 	laporan.KategoriKekerasan = c.FormValue("kategori_kekerasan")
 	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
 	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
-	laporan.TanggalKejadian = time.Time{}
+	tanggalKejadianStr := c.FormValue("tanggal_kejadian")
+	tanggalKejadian, err := parseDate(tanggalKejadianStr)
+	if err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "Invalid date format for tanggal_kejadian",
+		}
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+	laporan.TanggalKejadian = tanggalKejadian
 
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -123,6 +133,23 @@ func CreateLaporan(c *fiber.Ctx) error {
 		},
 	}
 	return c.Status(http.StatusCreated).JSON(response)
+}
+
+func parseDate(dateStr string) (time.Time, error) {
+	// Coba parse dengan format bulan tahun (01 2006)
+	if tanggal, err := time.Parse("01 2006", dateStr); err == nil {
+		return tanggal, nil
+	}
+	// Coba parse dengan format hari bulan tahun (02 01 2006)
+	if tanggal, err := time.Parse("02 01 2006", dateStr); err == nil {
+		return tanggal, nil
+	}
+	// Coba parse dengan format bulan hari tahun (01 02 2006)
+	if tanggal, err := time.Parse("01 02 2006", dateStr); err == nil {
+		return tanggal, nil
+	}
+	// Jika tidak berhasil, kembalikan error
+	return time.Time{}, errors.New("invalid date format")
 }
 
 func generateUniqueNoRegistrasi(month, year int) (string, error) {
