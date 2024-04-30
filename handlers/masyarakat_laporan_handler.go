@@ -92,17 +92,18 @@ func CreateLaporan(c *fiber.Ctx) error {
 	laporan.KategoriKekerasan = c.FormValue("kategori_kekerasan")
 	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
 	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
-	tanggalKejadianStr := c.FormValue("tanggal_kejadian")
-	tanggalKejadian, err := time.Parse("02-01-2006", tanggalKejadianStr)
-	if err != nil {
-		response := helper.ResponseWithOutData{
-			Code:    http.StatusBadRequest,
-			Status:  "error",
-			Message: "Invalid date format",
-		}
-		return c.Status(http.StatusBadRequest).JSON(response)
-	}
-	laporan.TanggalKejadian = tanggalKejadian
+	laporan.TanggalKejadian = time.Now()
+	// tanggalKejadianStr := c.FormValue("tanggal_kejadian")
+	// tanggalKejadian, err := time.Parse("02-01-2006", tanggalKejadianStr)
+	// if err != nil {
+	// 	response := helper.ResponseWithOutData{
+	// 		Code:    http.StatusBadRequest,
+	// 		Status:  "error",
+	// 		Message: "Invalid date format",
+	// 	}
+	// 	return c.Status(http.StatusBadRequest).JSON(response)
+	// }
+	// laporan.TanggalKejadian = tanggalKejadian
 
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
