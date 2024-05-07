@@ -16,14 +16,14 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Put("/edit-profile", handlers.UpdateUserProfile)
 
 	adminGroup.Get("/violence-categories", handlers.GetAllViolenceCategories)
-	adminGroup.Post("/violence-categories", handlers.CreateViolenceCategory)
-	adminGroup.Put("/violence-categories/:id", handlers.UpdateViolenceCategory)
-	adminGroup.Delete("/violence-categories/:id", handlers.DeleteViolenceCategory)
+	adminGroup.Post("/create-violence-category", handlers.CreateViolenceCategory)
+	adminGroup.Put("/violence-category/:id", handlers.UpdateViolenceCategory)
+	adminGroup.Delete("/delete-violence-category/:id", handlers.DeleteViolenceCategory)
 
 	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
 	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
 
-	adminGroup.Get("/content", handlers.GetAllContents)
+	adminGroup.Get("/contents", handlers.GetAllContents)
 	adminGroup.Post("/create-content", handlers.CreateContent)
 	adminGroup.Put("/edit-content/:id", handlers.UpdateContent)
 	adminGroup.Delete("/delete-content/:id", handlers.DeleteContent)

@@ -35,10 +35,6 @@ func getDB() *sql.DB {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// log.Println(os.Getenv("DB_USERNAME"));
-		// log.Println(os.Getenv("DB_PASSWORD"));
-		// log.Println(os.Getenv("DB_DATABASE"));
-		// log.Println(os.Getenv("DB_URL"));
 
 		db.SetMaxOpenConns(10)
 		db.SetMaxIdleConns(5)
