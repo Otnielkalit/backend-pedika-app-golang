@@ -162,7 +162,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(response)
 }
 
-
 func generateUniqueNoRegistrasi(month, year int) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -253,7 +252,7 @@ func GetReportsByUserID(userID uint) ([]map[string]interface{}, error) {
 		formattedReport := map[string]interface{}{
 			"no_registrasi":         report.NoRegistrasi,
 			"user_id":               report.UserID,
-			"kategori_kekerasan_id":  report.KategoriKekerasanID,
+			"kategori_kekerasan_id": report.KategoriKekerasanID,
 			"tanggal_pelaporan":     report.TanggalPelaporan,
 			"tanggal_kejadian":      report.TanggalKejadian,
 			"kategori_lokasi_kasus": report.KategoriLokasiKasus,
@@ -277,7 +276,7 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		Where("laporans.no_registrasi = ?", noRegistrasi).
 		Preload("AlamatTKP").
 		Preload("User").
-		Preload("ViolenceCategory"). 
+		Preload("ViolenceCategory").
 		First(&laporan).Error; err != nil {
 		status := http.StatusInternalServerError
 		message := "Failed to fetch report detail"

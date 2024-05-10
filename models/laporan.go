@@ -18,6 +18,7 @@ type Laporan struct {
 	AlamatTKP           AlamatTKP         `gorm:"foreignKey:IDAlamatTKP"`
 	IDAlamatTKP         uint              `json:"id_alamat_tkp"`
 	KronologisKasus     string            `json:"kronologis_kasus"`
+	// Status              string            `json:"status"`
 	Dokumentasi         datatypes.JSONMap `json:"dokumentasi" form:"image" gorm:"type:json"`
 	CreatedAt           time.Time         `json:"created_at"`
 	UpdatedAt           time.Time         `json:"updated_at"`

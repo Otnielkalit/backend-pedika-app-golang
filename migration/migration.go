@@ -16,7 +16,8 @@ func RunMigration() {
 		&models.AlamatTKP{},
 		&models.Event{},
 		&models.AlamatPelaku{},
-		&models.Pelaku{})
+		&models.Pelaku{},
+		&models.JanjiTemu{})
 	if err != nil {
 		log.Println(err)
 	}

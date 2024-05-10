@@ -30,6 +30,28 @@ func GetAllEvent(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(response)
 }
 
+func GetEventByID(c *fiber.Ctx) error {
+	eventID := c.Params("id")
+
+	var event models.Event
+	if err := database.DB.First(&event, eventID).Error; err != nil {
+		return c.Status(http.StatusNotFound).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusNotFound,
+			Status:  "error",
+			Message: "Event not found",
+		})
+	}
+
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Event details",
+		Data:    event,
+	}
+	return c.Status(http.StatusOK).JSON(response)
+}
+
+
 func CreateEvent(c *fiber.Ctx) error {
 	var event models.Event
 	if err := c.BodyParser(&event); err != nil {

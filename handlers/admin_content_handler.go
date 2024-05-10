@@ -29,6 +29,25 @@ func GetAllContents(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(response)
 }
 
+func GetContentByID(c *fiber.Ctx) error {
+	contentID := c.Params("id")
+
+	var content models.Content
+	if err := database.DB.First(&content, contentID).Error; err != nil {
+		return c.Status(http.StatusNotFound).JSON(fiber.Map{
+			"error": "Content not found",
+		})
+	}
+
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Content details",
+		Data:    content,
+	}
+	return c.Status(http.StatusOK).JSON(response)
+}
+
 func CreateContent(c *fiber.Ctx) error {
 	var content models.Content
 	if err := c.BodyParser(&content); err != nil {
