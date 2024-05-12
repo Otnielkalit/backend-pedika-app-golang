@@ -55,9 +55,8 @@ func MasyarakatCreateJanjiTemu(c *fiber.Ctx) error {
 	janjitemu.Status = "Belum disetujui"
 	janjitemu.KeperluanKonsultasi = c.FormValue("keperluan_konsultasi")
 	janjitemu.UserID = uint(userID)
-	if janjitemu.Status == "Ditolak" {
-		janjitemu.UserIDTolakSetujui = &userID
-	}
+	janjitemu.UserIDTolakSetujui = nil // Set user_tolak_setujui menjadi nil
+
 	if err := database.DB.Create(&janjitemu).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
@@ -66,11 +65,35 @@ func MasyarakatCreateJanjiTemu(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
+
+	// Buat respons tanpa detail pengguna
+	responseData := struct {
+		ID                  uint      `json:"id"`
+		UserID              uint      `json:"user_id"`
+		WaktuDimulai        time.Time `json:"waktu_dimulai"`
+		WaktuSelesai        time.Time `json:"waktu_selesai"`
+		KeperluanKonsultasi string    `json:"keperluan_konsultasi"`
+		Status              string    `json:"status"`
+		UserTolakSetujui    uint      `json:"user_tolak_setujui"`
+		AlasanDitolak       string    `json:"alasan_ditolak"`
+		AlasanDibatalkan    string    `json:"alasan_dibatalkan"`
+	}{
+		ID:                  janjitemu.ID,
+		UserID:              janjitemu.UserID,
+		WaktuDimulai:        janjitemu.WaktuDimulai,
+		WaktuSelesai:        janjitemu.WaktuSelesai,
+		KeperluanKonsultasi: janjitemu.KeperluanKonsultasi,
+		Status:              janjitemu.Status,
+		UserTolakSetujui:    0, // Set user_tolak_setujui menjadi 0
+		AlasanDitolak:       janjitemu.AlasanDitolak,
+		AlasanDibatalkan:    janjitemu.AlasanDibatalkan,
+	}
+
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
 		Message: "Janjitemu created successfully",
-		Data:    janjitemu,
+		Data:    responseData,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
 }
@@ -244,7 +267,7 @@ func MasyarakatCancelJanjiTemu(c *fiber.Ctx) error {
 
 func AdminGetAllJanjiTemu(c *fiber.Ctx) error {
 	var janjiTemus []models.JanjiTemu
-	if err := database.DB.Find(&janjiTemus).Error; err != nil {
+	if err := database.DB.Preload("User").Preload("UserTolakSetujui").Find(&janjiTemus).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
@@ -252,6 +275,7 @@ func AdminGetAllJanjiTemu(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
+
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
@@ -260,28 +284,26 @@ func AdminGetAllJanjiTemu(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
+
 func AdminJanjiTemuByID(c *fiber.Ctx) error {
-    janjiTemuID := c.Params("id")
-    var janjiTemu models.JanjiTemu
-    if err := database.DB.Preload("UserTolakSetujui").Preload("User").First(&janjiTemu, janjiTemuID).Error; err != nil {
-        response := helper.ResponseWithOutData{
-            Code:    http.StatusNotFound,
-            Status:  "error",
-            Message: "JanjiTemu not found",
-        }
-        return c.Status(http.StatusNotFound).JSON(response)
-    }
-    response := helper.ResponseWithData{
-        Code:    http.StatusOK,
-        Status:  "success",
-        Message: "JanjiTemu detail",
-        Data:    janjiTemu,
-    }
-    return c.Status(http.StatusOK).JSON(response)
+	janjiTemuID := c.Params("id")
+	var janjiTemu models.JanjiTemu
+	if err := database.DB.Preload("UserTolakSetujui").Preload("User").First(&janjiTemu, janjiTemuID).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusNotFound,
+			Status:  "error",
+			Message: "JanjiTemu not found",
+		}
+		return c.Status(http.StatusNotFound).JSON(response)
+	}
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "JanjiTemu detail",
+		Data:    janjiTemu,
+	}
+	return c.Status(http.StatusOK).JSON(response)
 }
-
-
-
 
 func AdminApproveJanjiTemu(c *fiber.Ctx) error {
 	token := c.Get("Authorization")
@@ -303,7 +325,7 @@ func AdminApproveJanjiTemu(c *fiber.Ctx) error {
 			Message: "Janji temu tidak ditemukan",
 		})
 	}
-	janjiTemu.UserIDTolakSetujui = &userID // Menyimpan pointer ke userID sebagai yang menyetujui
+	janjiTemu.UserIDTolakSetujui = &userID
 	janjiTemu.Status = "Disetujui"
 
 	if err := database.DB.Save(&janjiTemu).Error; err != nil {
@@ -354,7 +376,7 @@ func AdminCancelJanjiTemu(c *fiber.Ctx) error {
 		return c.Status(http.StatusNotFound).JSON(response)
 	}
 	janjiTemu.Status = "Ditolak"
-	janjiTemu.UserIDTolakSetujui = &userID // Menggunakan alamat memori dari userID
+	janjiTemu.UserIDTolakSetujui = &userID
 	janjiTemu.AlasanDitolak = c.FormValue("alasan_ditolak")
 	if err := database.DB.Save(&janjiTemu).Error; err != nil {
 		response := helper.ResponseWithOutData{

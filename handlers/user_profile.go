@@ -97,8 +97,6 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 			return c.Status(http.StatusBadRequest).JSON(response)
 		}
 	}
-
-	// Jika updateUser.PhotoProfile tidak kosong, upload ke Cloudinary
 	if updateUser.PhotoProfile != "" {
 		imageUrl, err := helper.UploadFileToCloudinary(strings.NewReader(updateUser.PhotoProfile), "photo_profile")
 		if err != nil {
@@ -111,13 +109,9 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 		}
 		existingUser.PhotoProfile = imageUrl
 	}
-
-	// Update informasi pengguna
 	existingUser.Username = updateUser.Username
 	existingUser.Email = updateUser.Email
 	existingUser.Alamat = updateUser.Alamat
-
-	// Simpan perubahan ke dalam database
 	if err := database.GetGormDBInstance().Save(&existingUser).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
