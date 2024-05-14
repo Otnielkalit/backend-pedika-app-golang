@@ -15,10 +15,10 @@ type Laporan struct {
 	TanggalPelaporan    time.Time         `json:"tanggal_pelaporan"`
 	TanggalKejadian     time.Time         `json:"tanggal_kejadian"`
 	KategoriLokasiKasus string            `json:"kategori_lokasi_kasus"`
-	AlamatTKP           AlamatTKP         `gorm:"foreignKey:IDAlamatTKP"`
-	IDAlamatTKP         uint              `json:"id_alamat_tkp"`
+	AlamatTKP           string            `json:":alamat_tkp"`
+	AlamatDetailTKP     string            `json:"alamat_detail_tkp"`
 	KronologisKasus     string            `json:"kronologis_kasus"`
-	// Status              string            `json:"status"`
+	Status              string            `json:"status"`
 	Dokumentasi         datatypes.JSONMap `json:"dokumentasi" form:"image" gorm:"type:json"`
 	CreatedAt           time.Time         `json:"created_at"`
 	UpdatedAt           time.Time         `json:"updated_at"`

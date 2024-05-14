@@ -7,7 +7,6 @@ import (
 	"backend-pedika-fiber/models"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -33,7 +32,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnauthorized).JSON(response)
 	}
 
-	// Parsing request body
 	var laporan models.Laporan
 	if err := c.BodyParser(&laporan); err != nil {
 		response := helper.ResponseWithOutData{
@@ -44,7 +42,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 
-	// Parsing category violence ID from request
 	categoryViolenceID, err := strconv.ParseUint(c.FormValue("kategori_kekerasan_id"), 10, 64)
 	if err != nil {
 		response := helper.ResponseWithOutData{
@@ -55,7 +52,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 
-	// Fetching violence category details
 	var violenceCategory models.ViolenceCategory
 	if err := database.GetGormDBInstance().First(&violenceCategory, categoryViolenceID).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -66,27 +62,32 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusNotFound).JSON(response)
 	}
 
-	// Parsing multipart form for file uploads
 	form, err := c.MultipartForm()
 	if err != nil {
-		log.Printf("Error retrieving multipart form: %v", err)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve multipart form",
 		})
 	}
 	files := form.File["dokumentasi"]
-
-	// Uploading files to Cloudinary
 	imageURLs, err := helper.UploadMultipleFileToCloudinary(files)
 	if err != nil {
-		log.Printf("Error uploading images to Cloudinary: %v", err)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to upload images",
 		})
 	}
+
 	laporan.Dokumentasi = datatypes.JSONMap{"urls": imageURLs}
 
-	// Generating unique registration number
+	tanggalKejadian, err := time.Parse("2006-01-02T15:04:05", c.FormValue("tanggal_kejadian"))
+	if err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "Invalid format for tanggal kejadian",
+		}
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
 	year := time.Now().Year()
 	month := int(time.Now().Month())
 	noRegistrasi, err := generateUniqueNoRegistrasi(month, year)
@@ -99,36 +100,19 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
-	// Creating address for TKP (Tempat Kejadian Perkara)
-	alamatTKP := models.AlamatTKP{
-		Provinsi:     c.FormValue("provinsi"),
-		Kabupaten:    c.FormValue("kabupaten"),
-		Kecamatan:    c.FormValue("kecamatan"),
-		Desa:         c.FormValue("desa"),
-		AlamatDetail: c.FormValue("alamat_detail"),
-	}
-	if err := database.GetGormDBInstance().Create(&alamatTKP).Error; err != nil {
-		response := helper.ResponseWithOutData{
-			Code:    http.StatusInternalServerError,
-			Status:  "error",
-			Message: "Failed to create alamat TKP",
-		}
-		return c.Status(http.StatusInternalServerError).JSON(response)
-	}
-
-	// Populating laporan struct
 	laporan.NoRegistrasi = noRegistrasi
 	laporan.TanggalPelaporan = time.Now()
-	laporan.IDAlamatTKP = alamatTKP.ID
+	laporan.TanggalKejadian = tanggalKejadian
+	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
+	laporan.AlamatTKP = c.FormValue("alamat_tkp")
+	laporan.AlamatDetailTKP = c.FormValue("alamat_detail_tkp")
+	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
+	laporan.Status = "Laporan masuk"
+	laporan.KategoriKekerasanID = uint(categoryViolenceID)
 	laporan.UserID = uint(userID)
 	laporan.CreatedAt = time.Now()
 	laporan.UpdatedAt = time.Now()
-	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
-	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
-	laporan.TanggalKejadian = time.Now()
-	laporan.KategoriKekerasanID = uint(categoryViolenceID)
 
-	// Saving laporan to database
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
@@ -138,7 +122,6 @@ func CreateLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
-	// Constructing response
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
@@ -150,7 +133,8 @@ func CreateLaporan(c *fiber.Ctx) error {
 			"tanggal_pelaporan":     laporan.TanggalPelaporan,
 			"tanggal_kejadian":      laporan.TanggalKejadian,
 			"kategori_lokasi_kasus": laporan.KategoriLokasiKasus,
-			"id_alamat_tkp":         laporan.IDAlamatTKP,
+			"alamat_tkp":            laporan.AlamatTKP,
+			"alamat_detail_tkp":     laporan.AlamatDetailTKP,
 			"kronologis_kasus":      laporan.KronologisKasus,
 			"dokumentasi": fiber.Map{
 				"urls": imageURLs,
@@ -159,6 +143,7 @@ func CreateLaporan(c *fiber.Ctx) error {
 			"updated_at": laporan.UpdatedAt,
 		},
 	}
+
 	return c.Status(http.StatusCreated).JSON(response)
 }
 
@@ -187,6 +172,7 @@ func generateUniqueNoRegistrasi(month, year int) (string, error) {
 	}
 	return regNo, nil
 }
+
 func convertToRoman(month int) string {
 	months := [...]string{"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"}
 	if month >= 1 && month <= 12 {
@@ -256,7 +242,8 @@ func GetReportsByUserID(userID uint) ([]map[string]interface{}, error) {
 			"tanggal_pelaporan":     report.TanggalPelaporan,
 			"tanggal_kejadian":      report.TanggalKejadian,
 			"kategori_lokasi_kasus": report.KategoriLokasiKasus,
-			"id_alamat_tkp":         report.IDAlamatTKP,
+			"alamat_tkp":            report.AlamatTKP,
+			"alamat_detail_tkp":     report.AlamatDetailTKP,
 			"kronologis_kasus":      report.KronologisKasus,
 			"dokumentasi":           report.Dokumentasi,
 			"created_at":            report.CreatedAt,
@@ -274,7 +261,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 	var laporan models.Laporan
 	if err := database.GetGormDBInstance().
 		Where("laporans.no_registrasi = ?", noRegistrasi).
-		Preload("AlamatTKP").
 		Preload("User").
 		Preload("ViolenceCategory").
 		First(&laporan).Error; err != nil {

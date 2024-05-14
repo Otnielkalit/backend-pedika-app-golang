@@ -13,6 +13,7 @@ func RunMigration() {
 		&models.EmergencyContact{},
 		&models.Content{},
 		&models.Laporan{},
+		// &models.TrackingLaporan{},
 		&models.AlamatTKP{},
 		&models.Event{},
 		&models.AlamatPelaku{},

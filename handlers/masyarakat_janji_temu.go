@@ -55,7 +55,7 @@ func MasyarakatCreateJanjiTemu(c *fiber.Ctx) error {
 	janjitemu.Status = "Belum disetujui"
 	janjitemu.KeperluanKonsultasi = c.FormValue("keperluan_konsultasi")
 	janjitemu.UserID = uint(userID)
-	janjitemu.UserIDTolakSetujui = nil // Set user_tolak_setujui menjadi nil
+	janjitemu.UserIDTolakSetujui = nil
 
 	if err := database.DB.Create(&janjitemu).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -66,7 +66,6 @@ func MasyarakatCreateJanjiTemu(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
-	// Buat respons tanpa detail pengguna
 	responseData := struct {
 		ID                  uint      `json:"id"`
 		UserID              uint      `json:"user_id"`
@@ -84,7 +83,7 @@ func MasyarakatCreateJanjiTemu(c *fiber.Ctx) error {
 		WaktuSelesai:        janjitemu.WaktuSelesai,
 		KeperluanKonsultasi: janjitemu.KeperluanKonsultasi,
 		Status:              janjitemu.Status,
-		UserTolakSetujui:    0, // Set user_tolak_setujui menjadi 0
+		UserTolakSetujui:    0,
 		AlasanDitolak:       janjitemu.AlasanDitolak,
 		AlasanDibatalkan:    janjitemu.AlasanDibatalkan,
 	}
