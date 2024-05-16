@@ -112,6 +112,10 @@ func CreateLaporan(c *fiber.Ctx) error {
 	laporan.UserID = uint(userID)
 	laporan.CreatedAt = time.Now()
 	laporan.UpdatedAt = time.Now()
+	laporan.AlasanDibatalkan = ""
+	laporan.WaktuDilihat = nil
+	laporan.WaktuDiproses = nil
+	laporan.WaktuDibatalkan = nil
 
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -179,6 +183,124 @@ func convertToRoman(month int) string {
 		return months[month-1]
 	}
 	return ""
+}
+
+/*=========================== USER EDIT LAPORAN =======================*/
+
+func EditLaporan(c *fiber.Ctx) error {
+	token := c.Get("Authorization")
+	userID, err := auth.ExtractUserIDFromToken(token)
+	if err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusUnauthorized,
+			Status:  "error",
+			Message: "Unauthorized",
+		}
+		return c.Status(http.StatusUnauthorized).JSON(response)
+	}
+
+	noRegistrasi := c.Params("no_registrasi")
+
+	var laporan models.Laporan
+	if err := database.GetGormDBInstance().Where("no_registrasi = ?", noRegistrasi).First(&laporan).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusNotFound,
+			Status:  "error",
+			Message: "Laporan not found",
+		}
+		return c.Status(http.StatusNotFound).JSON(response)
+	}
+
+	if laporan.UserID != uint(userID) {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusForbidden,
+			Status:  "error",
+			Message: "You are not authorized to edit this laporan",
+		}
+		return c.Status(http.StatusForbidden).JSON(response)
+	}
+
+	if err := c.BodyParser(&laporan); err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "Invalid request body",
+		}
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	if newCategoryID := c.FormValue("kategori_kekerasan_id"); newCategoryID != "" {
+		categoryViolenceID, err := strconv.ParseUint(newCategoryID, 10, 64)
+		if err != nil {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusBadRequest,
+				Status:  "error",
+				Message: "Invalid KategoriKekerasan ID",
+			}
+			return c.Status(http.StatusBadRequest).JSON(response)
+		}
+
+		var violenceCategory models.ViolenceCategory
+		if err := database.GetGormDBInstance().First(&violenceCategory, categoryViolenceID).Error; err != nil {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusNotFound,
+				Status:  "error",
+				Message: "Violence category not found",
+			}
+			return c.Status(http.StatusNotFound).JSON(response)
+		}
+		laporan.KategoriKekerasanID = uint(categoryViolenceID)
+	}
+
+	tanggalKejadian := c.FormValue("tanggal_kejadian")
+	if tanggalKejadian != "" {
+		parsedTanggalKejadian, err := time.Parse("2006-01-02T15:04:05", tanggalKejadian)
+		if err != nil {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusBadRequest,
+				Status:  "error",
+				Message: "Invalid format for tanggal kejadian",
+			}
+			return c.Status(http.StatusBadRequest).JSON(response)
+		}
+		laporan.TanggalKejadian = parsedTanggalKejadian
+	}
+
+	form, err := c.MultipartForm()
+	if err == nil && form.File != nil && len(form.File["dokumentasi"]) > 0 {
+		files := form.File["dokumentasi"]
+		imageURLs, err := helper.UploadMultipleFileToCloudinary(files)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to upload images",
+			})
+		}
+		laporan.Dokumentasi = datatypes.JSONMap{"urls": imageURLs}
+	}
+
+	laporan.KategoriLokasiKasus = c.FormValue("kategori_lokasi_kasus")
+	laporan.AlamatTKP = c.FormValue("alamat_tkp")
+	laporan.AlamatDetailTKP = c.FormValue("alamat_detail_tkp")
+	laporan.KronologisKasus = c.FormValue("kronologis_kasus")
+	laporan.UpdatedAt = time.Now()
+
+	if err := database.GetGormDBInstance().Save(&laporan).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to update laporan",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Laporan updated successfully",
+		Data:    laporan,
+	}
+
+	return c.Status(http.StatusOK).JSON(response)
 }
 
 /*=========================== AMBIL SEMUA  LAPORAN SETIAP BERDASARKAN USER YANG LOGIN=======================*/
@@ -260,9 +382,9 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 	noRegistrasi := c.Params("no_registrasi")
 	var laporan models.Laporan
 	if err := database.GetGormDBInstance().
-		Where("laporans.no_registrasi = ?", noRegistrasi).
 		Preload("User").
 		Preload("ViolenceCategory").
+		Where("no_registrasi = ?", noRegistrasi).
 		First(&laporan).Error; err != nil {
 		status := http.StatusInternalServerError
 		message := "Failed to fetch report detail"
@@ -277,11 +399,99 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(status).JSON(response)
 	}
+	var trackingLaporan []models.TrackingLaporan
+	if err := database.GetGormDBInstance().Raw(`
+		SELECT
+			id, no_registrasi, keterangan, document, created_at, updated_at
+		FROM
+			tracking_laporans
+		WHERE
+			no_registrasi = ?
+	`, noRegistrasi).Scan(&trackingLaporan).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to fetch tracking laporan details",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+	responseData := struct {
+		models.Laporan
+		TrackingLaporan []models.TrackingLaporan `json:"tracking_laporan"`
+	}{
+		Laporan:         laporan,
+		TrackingLaporan: trackingLaporan,
+	}
+
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
 		Message: "Report detail retrieved successfully",
-		Data:    laporan,
+		Data:    responseData,
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
+
+/*=========================== BATALKAN LAPORAN BERDASARKAN NO_REGISTRASI =======================*/
+func BatalkanLaporan(c *fiber.Ctx) error {
+    noRegistrasi := c.Params("no_registrasi")
+
+    var laporan models.Laporan
+    db := database.GetGormDBInstance()
+    if err := db.Where("no_registrasi = ?", noRegistrasi).First(&laporan).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            response := helper.ResponseWithOutData{
+                Code:    http.StatusNotFound,
+                Status:  "error",
+                Message: "Laporan not found",
+            }
+            return c.Status(http.StatusNotFound).JSON(response)
+        }
+        response := helper.ResponseWithOutData{
+            Code:    http.StatusInternalServerError,
+            Status:  "error",
+            Message: "Failed to retrieve laporan",
+        }
+        return c.Status(http.StatusInternalServerError).JSON(response)
+    }
+
+    alasanDibatalkan := c.FormValue("alasan_dibatalkan")
+    if alasanDibatalkan == "" {
+        response := helper.ResponseWithOutData{
+            Code:    http.StatusBadRequest,
+            Status:  "error",
+            Message: "Alasan dibatalkan is required",
+        }
+        return c.Status(http.StatusBadRequest).JSON(response)
+    }
+
+    laporan.Status = "Dibatalkan"
+    laporan.AlasanDibatalkan = alasanDibatalkan
+    now := time.Now()
+    laporan.WaktuDibatalkan = &now
+
+    if err := db.Save(&laporan).Error; err != nil {
+        response := helper.ResponseWithOutData{
+            Code:    http.StatusInternalServerError,
+            Status:  "error",
+            Message: "Failed to update laporan",
+        }
+        return c.Status(http.StatusInternalServerError).JSON(response)
+    }
+
+    response := helper.ResponseWithData{
+        Code:    http.StatusOK,
+        Status:  "success",
+        Message: "Laporan cancelled successfully",
+        Data: fiber.Map{
+            "no_registrasi":      laporan.NoRegistrasi,
+            "status":             laporan.Status,
+            "alasan_dibatalkan":  laporan.AlasanDibatalkan,
+            "waktu_dibatalkan":   laporan.WaktuDibatalkan,
+            "updated_at":         laporan.UpdatedAt,
+        },
+    }
+
+    return c.Status(http.StatusOK).JSON(response)
+}
+

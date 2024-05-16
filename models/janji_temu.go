@@ -14,4 +14,6 @@ type JanjiTemu struct {
 	UserIDTolakSetujui  *uint     `json:"userid_tolak_setujui,omitempty"`
 	AlasanDitolak       string    `json:"alasan_ditolak" gorm:"column:alasan_ditolak"`
 	AlasanDibatalkan    string    `json:"alasan_dibatalkan" gorm:"column:alasan_dibatalkan"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
 }

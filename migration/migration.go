@@ -13,11 +13,9 @@ func RunMigration() {
 		&models.EmergencyContact{},
 		&models.Content{},
 		&models.Laporan{},
-		// &models.TrackingLaporan{},
-		&models.AlamatTKP{},
+		// &models.Korban{},
+		&models.TrackingLaporan{},
 		&models.Event{},
-		&models.AlamatPelaku{},
-		&models.Pelaku{},
 		&models.JanjiTemu{})
 	if err != nil {
 		log.Println(err)
