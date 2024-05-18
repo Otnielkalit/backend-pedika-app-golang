@@ -114,7 +114,6 @@ func MasyarakatEditJanjiTemu(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 
-	// Parse waktu dimulai dan waktu selesai
 	waktuDimulai := updateRequest.WaktuDimulai
 	waktuSelesai := updateRequest.WaktuSelesai
 

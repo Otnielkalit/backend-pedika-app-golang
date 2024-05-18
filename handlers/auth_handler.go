@@ -62,13 +62,9 @@ func RegisterUser(c *fiber.Ctx) error {
 	user.Username = username
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-
-	// Set default value "" for PhotoProfile if not provided
 	if user.PhotoProfile == "" {
 		user.PhotoProfile = ""
 	}
-
-	// Set default value "" for TempatLahir, TanggalLahir, JenisKelamin if not provided
 	if user.TempatLahir == "" {
 		user.TempatLahir = ""
 	}

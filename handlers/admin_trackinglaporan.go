@@ -23,8 +23,6 @@ func CreateTrackingLaporan(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
-
-	// Explicitly fetch no_registrasi from form data
 	noRegistrasi := c.FormValue("no_registrasi")
 	if noRegistrasi == "" {
 		response := helper.ResponseWithOutData{
@@ -137,15 +135,12 @@ func UpdateTrackingLaporan(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 
-	// Update only the fields that are not empty in the request body
 	if updatedData.NoRegistrasi != "" {
 		trackingLaporan.NoRegistrasi = updatedData.NoRegistrasi
 	}
 	if updatedData.Keterangan != "" {
 		trackingLaporan.Keterangan = updatedData.Keterangan
 	}
-
-	// Handle file uploads
 	form, err := c.MultipartForm()
 	if err != nil && err != http.ErrNotMultipart {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{

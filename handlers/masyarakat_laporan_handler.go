@@ -116,6 +116,7 @@ func CreateLaporan(c *fiber.Ctx) error {
 	laporan.WaktuDilihat = nil
 	laporan.WaktuDiproses = nil
 	laporan.WaktuDibatalkan = nil
+	laporan.UserIDMelihat = nil
 
 	if err := database.GetGormDBInstance().Create(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -381,7 +382,10 @@ func GetReportsByUserID(userID uint) ([]map[string]interface{}, error) {
 func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 	noRegistrasi := c.Params("no_registrasi")
 	var laporan models.Laporan
-	if err := database.GetGormDBInstance().
+	db := database.GetGormDBInstance()
+
+	// Preload the necessary related data
+	if err := db.
 		Preload("User").
 		Preload("ViolenceCategory").
 		Where("no_registrasi = ?", noRegistrasi).
@@ -399,8 +403,9 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(status).JSON(response)
 	}
+
 	var trackingLaporan []models.TrackingLaporan
-	if err := database.GetGormDBInstance().Raw(`
+	if err := db.Raw(`
 		SELECT
 			id, no_registrasi, keterangan, document, created_at, updated_at
 		FROM
@@ -415,12 +420,34 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
+
+	// Fetch the user details who viewed the report
+	var userMelihat models.User
+	if laporan.UserIDMelihat != nil {
+		if err := db.First(&userMelihat, *laporan.UserIDMelihat).Error; err != nil {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to fetch user detail who viewed the report",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
+		}
+	}
+
+	// Response structure with user detail who viewed the report
 	responseData := struct {
 		models.Laporan
 		TrackingLaporan []models.TrackingLaporan `json:"tracking_laporan"`
+		UserMelihat     *models.User             `json:"user_melihat,omitempty"`
 	}{
 		Laporan:         laporan,
 		TrackingLaporan: trackingLaporan,
+		UserMelihat:     nil,
+	}
+
+	// If there's a user who viewed the report, add their details
+	if laporan.UserIDMelihat != nil {
+		responseData.UserMelihat = &userMelihat
 	}
 
 	response := helper.ResponseWithData{
@@ -429,69 +456,70 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		Message: "Report detail retrieved successfully",
 		Data:    responseData,
 	}
+
 	return c.Status(http.StatusOK).JSON(response)
 }
 
+
 /*=========================== BATALKAN LAPORAN BERDASARKAN NO_REGISTRASI =======================*/
 func BatalkanLaporan(c *fiber.Ctx) error {
-    noRegistrasi := c.Params("no_registrasi")
+	noRegistrasi := c.Params("no_registrasi")
 
-    var laporan models.Laporan
-    db := database.GetGormDBInstance()
-    if err := db.Where("no_registrasi = ?", noRegistrasi).First(&laporan).Error; err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            response := helper.ResponseWithOutData{
-                Code:    http.StatusNotFound,
-                Status:  "error",
-                Message: "Laporan not found",
-            }
-            return c.Status(http.StatusNotFound).JSON(response)
-        }
-        response := helper.ResponseWithOutData{
-            Code:    http.StatusInternalServerError,
-            Status:  "error",
-            Message: "Failed to retrieve laporan",
-        }
-        return c.Status(http.StatusInternalServerError).JSON(response)
-    }
+	var laporan models.Laporan
+	db := database.GetGormDBInstance()
+	if err := db.Where("no_registrasi = ?", noRegistrasi).First(&laporan).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusNotFound,
+				Status:  "error",
+				Message: "Laporan not found",
+			}
+			return c.Status(http.StatusNotFound).JSON(response)
+		}
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to retrieve laporan",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
 
-    alasanDibatalkan := c.FormValue("alasan_dibatalkan")
-    if alasanDibatalkan == "" {
-        response := helper.ResponseWithOutData{
-            Code:    http.StatusBadRequest,
-            Status:  "error",
-            Message: "Alasan dibatalkan is required",
-        }
-        return c.Status(http.StatusBadRequest).JSON(response)
-    }
+	alasanDibatalkan := c.FormValue("alasan_dibatalkan")
+	if alasanDibatalkan == "" {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "Alasan dibatalkan is required",
+		}
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
 
-    laporan.Status = "Dibatalkan"
-    laporan.AlasanDibatalkan = alasanDibatalkan
-    now := time.Now()
-    laporan.WaktuDibatalkan = &now
+	laporan.Status = "Dibatalkan"
+	laporan.AlasanDibatalkan = alasanDibatalkan
+	now := time.Now()
+	laporan.WaktuDibatalkan = &now
 
-    if err := db.Save(&laporan).Error; err != nil {
-        response := helper.ResponseWithOutData{
-            Code:    http.StatusInternalServerError,
-            Status:  "error",
-            Message: "Failed to update laporan",
-        }
-        return c.Status(http.StatusInternalServerError).JSON(response)
-    }
+	if err := db.Save(&laporan).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to update laporan",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
 
-    response := helper.ResponseWithData{
-        Code:    http.StatusOK,
-        Status:  "success",
-        Message: "Laporan cancelled successfully",
-        Data: fiber.Map{
-            "no_registrasi":      laporan.NoRegistrasi,
-            "status":             laporan.Status,
-            "alasan_dibatalkan":  laporan.AlasanDibatalkan,
-            "waktu_dibatalkan":   laporan.WaktuDibatalkan,
-            "updated_at":         laporan.UpdatedAt,
-        },
-    }
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Laporan cancelled successfully",
+		Data: fiber.Map{
+			"no_registrasi":     laporan.NoRegistrasi,
+			"status":            laporan.Status,
+			"alasan_dibatalkan": laporan.AlasanDibatalkan,
+			"waktu_dibatalkan":  laporan.WaktuDibatalkan,
+			"updated_at":        laporan.UpdatedAt,
+		},
+	}
 
-    return c.Status(http.StatusOK).JSON(response)
+	return c.Status(http.StatusOK).JSON(response)
 }
-

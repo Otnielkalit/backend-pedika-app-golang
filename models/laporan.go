@@ -21,6 +21,7 @@ type Laporan struct {
 	Status              string            `json:"status"`
 	AlasanDibatalkan    string            `json:"alasan_dibatalkan"`
 	WaktuDilihat        *time.Time        `json:"waktu_dilihat"`
+	UserIDMelihat       *uint             `json:"userid_melihat,omitempty"`
 	WaktuDiproses       *time.Time        `json:"waktu_diproses"`
 	WaktuDibatalkan     *time.Time        `json:"waktu_dibatalkan"`
 	Dokumentasi         datatypes.JSONMap `json:"dokumentasi" form:"image" gorm:"type:json"`

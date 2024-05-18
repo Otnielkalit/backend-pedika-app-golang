@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"backend-pedika-fiber/auth"
 	"backend-pedika-fiber/database"
 	"backend-pedika-fiber/helper"
 	"backend-pedika-fiber/models"
@@ -47,6 +48,7 @@ func GetLatestReports(c *fiber.Ctx) error {
 			"alasan_dibatalkan":     report.AlasanDibatalkan,
 			"waktu_dibatalkan":      report.WaktuDibatalkan,
 			"waktu_dilihat":         report.WaktuDilihat,
+			"userid_melihat":        report.UserIDMelihat,
 			"waktu_diproses":        report.WaktuDiproses,
 			"dokumentasi":           report.Dokumentasi,
 			"created_at":            report.CreatedAt,
@@ -68,9 +70,10 @@ func GetLatestReports(c *fiber.Ctx) error {
 func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 	noRegistrasi := c.Params("no_registrasi")
 	var laporan models.Laporan
+	db := database.GetGormDBInstance()
 
-	// Get the laporan details with Preload
-	if err := database.GetGormDBInstance().
+	// Preload the necessary related data
+	if err := db.
 		Preload("User").
 		Preload("ViolenceCategory").
 		Where("no_registrasi = ?", noRegistrasi).
@@ -90,8 +93,9 @@ func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
+
 	var trackingLaporan []models.TrackingLaporan
-	if err := database.GetGormDBInstance().Where("no_registrasi = ?", noRegistrasi).Find(&trackingLaporan).Error; err != nil {
+	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&trackingLaporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
@@ -99,12 +103,34 @@ func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
+
+	// Fetch the user details who viewed the report
+	var userMelihat models.User
+	if laporan.UserIDMelihat != nil {
+		if err := db.First(&userMelihat, *laporan.UserIDMelihat).Error; err != nil {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to fetch user detail who viewed the report",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
+		}
+	}
+
+	// Response structure with user detail who viewed the report
 	responseData := struct {
 		models.Laporan
 		TrackingLaporan []models.TrackingLaporan `json:"tracking_laporan"`
+		UserMelihat     *models.User             `json:"user_melihat,omitempty"`
 	}{
 		Laporan:         laporan,
 		TrackingLaporan: trackingLaporan,
+		UserMelihat:     nil,
+	}
+
+	// If there's a user who viewed the report, add their details
+	if laporan.UserIDMelihat != nil {
+		responseData.UserMelihat = &userMelihat
 	}
 
 	response := helper.ResponseWithData{
@@ -113,11 +139,22 @@ func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 		Message: "Report detail retrieved successfully",
 		Data:    responseData,
 	}
+
 	return c.Status(http.StatusOK).JSON(response)
 }
 
 func AdminLihatLaporan(c *fiber.Ctx) error {
 	noRegistrasi := c.Params("no_registrasi")
+	token := c.Get("Authorization")
+	userID, err := auth.ExtractUserIDFromToken(token)
+	if err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusUnauthorized,
+			Status:  "error",
+			Message: "Unauthorized",
+		}
+		return c.Status(http.StatusUnauthorized).JSON(response)
+	}
 
 	var laporan models.Laporan
 	db := database.GetGormDBInstance()
@@ -141,6 +178,7 @@ func AdminLihatLaporan(c *fiber.Ctx) error {
 	laporan.Status = "Dilihat"
 	now := time.Now()
 	laporan.WaktuDilihat = &now
+	laporan.UserIDMelihat = &userID
 
 	if err := db.Save(&laporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -156,10 +194,11 @@ func AdminLihatLaporan(c *fiber.Ctx) error {
 		Status:  "success",
 		Message: "Laporan status updated successfully",
 		Data: fiber.Map{
-			"no_registrasi": laporan.NoRegistrasi,
-			"status":        laporan.Status,
-			"waktu_dilihat": laporan.WaktuDilihat,
-			"updated_at":    laporan.UpdatedAt,
+			"no_registrasi":  laporan.NoRegistrasi,
+			"status":         laporan.Status,
+			"waktu_dilihat":  laporan.WaktuDilihat,
+			"userid_melihat": laporan.UserIDMelihat,
+			"updated_at":     laporan.UpdatedAt,
 		},
 	}
 

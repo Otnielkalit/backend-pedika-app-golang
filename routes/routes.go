@@ -36,7 +36,7 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Put("/edit-event/:id", handlers.UpdateEvent)
 	adminGroup.Delete("/delete-event/:id", handlers.DeleteEvent)
 
-	adminGroup.Get("/laporan", handlers.GetLatestReports)
+	adminGroup.Get("/laporans", handlers.GetLatestReports)
 	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
 	adminGroup.Put("/lihat-laporan/:no_registrasi", handlers.AdminLihatLaporan)
 	adminGroup.Put("/proses-laporan/:no_registrasi", handlers.AdminProsesLaporan)
@@ -69,7 +69,7 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Put("/edit-janjitemu/:id", handlers.MasyarakatEditJanjiTemu)
 	masyarakatGroup.Put("/batal-janjitemu/:id", handlers.MasyarakatCancelJanjiTemu)
 
-	masyarakatGroup.Get("/laporan", handlers.GetUserReports)
+	masyarakatGroup.Get("/laporans", handlers.GetUserReports)
 	masyarakatGroup.Post("/buat-laporan", handlers.CreateLaporan)
 	masyarakatGroup.Put("/edit-laporan/:no_registrasi", handlers.EditLaporan)
 	masyarakatGroup.Get("/detail-laporan/:no_registrasi", handlers.GetReportByNoRegistrasi)
