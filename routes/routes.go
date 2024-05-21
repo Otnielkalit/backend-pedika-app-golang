@@ -15,14 +15,25 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Get("/profile", handlers.GetUserProfile)
 	adminGroup.Put("/edit-profile", handlers.UpdateUserProfile)
 
+	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
+	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
+
+	adminGroup.Get("/laporans", handlers.GetLatestReports)
+	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
+	adminGroup.Put("/lihat-laporan/:no_registrasi", handlers.AdminLihatLaporan)
+	adminGroup.Put("/proses-laporan/:no_registrasi", handlers.AdminProsesLaporan)
+
+	adminGroup.Post("/create-tracking-laporan", handlers.CreateTrackingLaporan)
+	adminGroup.Delete("/delete-tracking-laporan/:id", handlers.DeleteTrackingLaporan)
+	adminGroup.Put("/edit-tracking-laporan/:id", handlers.UpdateTrackingLaporan)
+
+	adminGroup.Post("/create-pelaku-kekerasan", handlers.CreatePelaku)
+
 	adminGroup.Get("/violence-categories", handlers.GetAllViolenceCategories)
 	adminGroup.Get("/detail-violence-category/:id", handlers.GetViolenceCategoryByID)
 	adminGroup.Post("/create-violence-category", handlers.CreateViolenceCategory)
 	adminGroup.Put("/edit-violence-category/:id", handlers.UpdateViolenceCategory)
 	adminGroup.Delete("/delete-violence-category/:id", handlers.DeleteViolenceCategory)
-
-	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
-	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
 
 	adminGroup.Get("/contents", handlers.GetAllContents)
 	adminGroup.Get("/detail-content/:id", handlers.GetContentByID)
@@ -35,15 +46,6 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Post("/create-event", handlers.CreateEvent)
 	adminGroup.Put("/edit-event/:id", handlers.UpdateEvent)
 	adminGroup.Delete("/delete-event/:id", handlers.DeleteEvent)
-
-	adminGroup.Get("/laporans", handlers.GetLatestReports)
-	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
-	adminGroup.Put("/lihat-laporan/:no_registrasi", handlers.AdminLihatLaporan)
-	adminGroup.Put("/proses-laporan/:no_registrasi", handlers.AdminProsesLaporan)
-
-	adminGroup.Post("/create-tracking-laporan", handlers.CreateTrackingLaporan)
-	adminGroup.Delete("/delete-tracking-laporan/:id", handlers.DeleteTrackingLaporan)
-	adminGroup.Put("/edit-tracking-laporan/:id", handlers.UpdateTrackingLaporan)
 
 	adminGroup.Get("/janjitemus", handlers.AdminGetAllJanjiTemu)
 	adminGroup.Get("/detail-janjitemu/:id", handlers.AdminJanjiTemuByID)
@@ -75,7 +77,7 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Get("/detail-laporan/:no_registrasi", handlers.GetReportByNoRegistrasi)
 	masyarakatGroup.Put("batalkan-laporan/:no_registrasi", handlers.BatalkanLaporan)
 
-	// masyarakatGroup.Post("/pelaku-kekerasan", handlers.CreatePelaku)
+	masyarakatGroup.Post("/pelaku-kekerasan", handlers.CreatePelaku)
 	// masyarakatGroup.Put("/pelaku-kekerasan/:id", handlers.UpdatePelaku)
 	// masyarakatGroup.Delete("/pelaku-kekerasan/:id", handlers.DeletePelaku)
 

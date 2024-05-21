@@ -4,7 +4,8 @@ import (
 	"backend-pedika-fiber/database"
 	"backend-pedika-fiber/helper"
 	"backend-pedika-fiber/models"
-	"net/http" 
+	"net/http"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -110,49 +111,63 @@ func CreateViolenceCategory(c *fiber.Ctx) error {
 }
 
 func UpdateViolenceCategory(c *fiber.Ctx) error {
-	var updatedCategory models.ViolenceCategory
-	if err := c.BodyParser(&updatedCategory); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(helper.ResponseWithOutData{
-			Code:    http.StatusBadRequest,
-			Status:  "error",
-			Message: "Invalid request body",
-		})
-	}
-	categoryID := c.Params("id")
-
-	var existingCategory models.ViolenceCategory
-	if err := database.DB.First(&existingCategory, categoryID).Error; err != nil {
-		return c.Status(http.StatusNotFound).JSON(helper.ResponseWithOutData{
+	id := c.Params("id")
+	var category models.ViolenceCategory
+	if err := database.DB.First(&category, id).Error; err != nil {
+		response := helper.ResponseWithOutData{
 			Code:    http.StatusNotFound,
 			Status:  "error",
-			Message: "Violence category not found",
-		})
+			Message: "Category not found",
+		}
+		return c.Status(http.StatusNotFound).JSON(response)
 	}
-
-	if updatedCategory.Image != existingCategory.Image {
-		if err := helper.DeleteImage(existingCategory.Image); err != nil {
-			return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
+	categoryName := c.FormValue("category_name")
+	if categoryName != "" {
+		category.CategoryName = categoryName
+	}
+	file, err := c.FormFile("image")
+	if err == nil {
+		src, err := file.Open()
+		if err != nil {
+			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to delete old image",
-			})
+				Message: "Failed to open image file",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
-	}
+		defer src.Close()
 
-	if err := database.DB.Model(&models.ViolenceCategory{}).Where("id = ?", categoryID).Updates(&updatedCategory).Error; err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
+		imageURL, err := helper.UploadFileToCloudinary(src, file.Filename)
+		if err != nil {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to upload image",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
+		}
+
+		category.Image = imageURL
+	}
+	category.UpdatedAt = time.Now()
+
+	if err := database.DB.Save(&category).Error; err != nil {
+		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
 			Message: "Failed to update violence category",
-		})
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
-	return c.Status(http.StatusOK).JSON(helper.ResponseWithData{
+	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
 		Message: "Violence category updated successfully",
-		Data:    updatedCategory,
-	})
+		Data:    category,
+	}
+	return c.Status(http.StatusOK).JSON(response)
 }
 
 func DeleteViolenceCategory(c *fiber.Ctx) error {
