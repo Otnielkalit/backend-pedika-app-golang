@@ -11,9 +11,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func CreatePelaku(c *fiber.Ctx) error {
-	var pelaku models.Pelaku
-	if err := c.BodyParser(&pelaku); err != nil {
+func CreateKorban(c *fiber.Ctx) error {
+	var korban models.Korban
+	if err := c.BodyParser(&korban); err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusBadRequest,
 			Status:  "error",
@@ -21,26 +21,26 @@ func CreatePelaku(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
-	pelaku.NoRegistrasi = c.FormValue("no_registrasi")
-	pelaku.NIKPelaku = c.FormValue("nik_pelaku")
-	pelaku.Nama = c.FormValue("nama_pelaku")
-	usia, err := strconv.Atoi(c.FormValue("usia_pelaku"))
+	korban.NoRegistrasi = c.FormValue("no_registrasi")
+	korban.NIKKorban = c.FormValue("nik_korban")
+	korban.Nama = c.FormValue("nama_korban")
+	usia, err := strconv.Atoi(c.FormValue("usia_korban"))
 	if err == nil {
-		pelaku.Usia = usia
+		korban.Usia = usia
 	}
-	pelaku.AlamatPelaku = c.FormValue("alamat_pelaku")
-	pelaku.AlamatDetail = c.FormValue("alamat_detail")
-	pelaku.JenisKelamin = c.FormValue("jenis_kelamin")
-	pelaku.Agama = c.FormValue("agama")
-	pelaku.NoTelepon = c.FormValue("no_telepon")
-	pelaku.Pendidikan = c.FormValue("pendidikan")
-	pelaku.Pekerjaan = c.FormValue("pekerjaan")
-	pelaku.StatusPerkawinan = c.FormValue("status_perkawinan")
-	pelaku.Kebangsaan = c.FormValue("kebangsaan")
-	pelaku.HubunganDenganKorban = c.FormValue("hubungan_dengan_korban")
-	pelaku.KeteranganLainnya = c.FormValue("keterangan_lainnya")
+	korban.AlamatKorban = c.FormValue("alamat_korban")
+	korban.AlamatDetail = c.FormValue("alamat_detail")
+	korban.JenisKelamin = c.FormValue("jenis_kelamin")
+	korban.Agama = c.FormValue("agama")
+	korban.NoTelepon = c.FormValue("no_telepon")
+	korban.Pendidikan = c.FormValue("pendidikan")
+	korban.Pekerjaan = c.FormValue("pekerjaan")
+	korban.StatusPerkawinan = c.FormValue("status_perkawinan")
+	korban.Kebangsaan = c.FormValue("kebangsaan")
+	korban.HubunganDenganKorban = c.FormValue("hubungan_dengan_pelaku")
+	korban.KeteranganLainnya = c.FormValue("keterangan_lainnya")
 
-	file, err := c.FormFile("dokumentasi_pelaku")
+	file, err := c.FormFile("dokumentasi_korban")
 	if err == nil {
 		src, err := file.Open()
 		if err != nil {
@@ -63,15 +63,15 @@ func CreatePelaku(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
 
-		pelaku.DokumentasiPelaku = imageURL
+		korban.DokumentasiPelaku = imageURL
 	}
-	pelaku.CreatedAt = time.Now()
-	pelaku.UpdatedAt = time.Now()
-	if err := database.DB.Create(&pelaku).Error; err != nil {
+	korban.CreatedAt = time.Now()
+	korban.UpdatedAt = time.Now()
+	if err := database.DB.Create(&korban).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create pelaku",
+			Message: "Failed to create korban",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -79,23 +79,23 @@ func CreatePelaku(c *fiber.Ctx) error {
 		Code:    http.StatusCreated,
 		Status:  "success",
 		Message: "Pelaku created successfully",
-		Data:    pelaku,
+		Data:    korban,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
 }
 
-func UpdatePelaku(c *fiber.Ctx) error {
+func UpdateKorban(c *fiber.Ctx) error {
 	id := c.Params("id")
-	var pelaku models.Pelaku
-	if err := database.DB.First(&pelaku, id).Error; err != nil {
+	var korban models.Korban
+	if err := database.DB.First(&korban, id).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusNotFound,
 			Status:  "error",
-			Message: "Pelaku not found",
+			Message: "korban not found",
 		}
 		return c.Status(http.StatusNotFound).JSON(response)
 	}
-	if err := c.BodyParser(&pelaku); err != nil {
+	if err := c.BodyParser(&korban); err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusBadRequest,
 			Status:  "error",
@@ -104,54 +104,54 @@ func UpdatePelaku(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 	if value := c.FormValue("no_registrasi"); value != "" {
-		pelaku.NoRegistrasi = value
+		korban.NoRegistrasi = value
 	}
-	if value := c.FormValue("nik_pelaku"); value != "" {
-		pelaku.NIKPelaku = value
+	if value := c.FormValue("nik_korban"); value != "" {
+		korban.NIKKorban = value
 	}
-	if value := c.FormValue("nama_pelaku"); value != "" {
-		pelaku.Nama = value
+	if value := c.FormValue("nama_korban"); value != "" {
+		korban.Nama = value
 	}
-	if value := c.FormValue("usia_pelaku"); value != "" {
+	if value := c.FormValue("usia_korban"); value != "" {
 		if usia, err := strconv.Atoi(value); err == nil {
-			pelaku.Usia = usia
+			korban.Usia = usia
 		}
 	}
-	if value := c.FormValue("alamat_pelaku"); value != "" {
-		pelaku.AlamatPelaku = value
+	if value := c.FormValue("alamat_korban"); value != "" {
+		korban.AlamatKorban = value
 	}
 	if value := c.FormValue("alamat_detail"); value != "" {
-		pelaku.AlamatDetail = value
+		korban.AlamatDetail = value
 	}
 	if value := c.FormValue("jenis_kelamin"); value != "" {
-		pelaku.JenisKelamin = value
+		korban.JenisKelamin = value
 	}
 	if value := c.FormValue("agama"); value != "" {
-		pelaku.Agama = value
+		korban.Agama = value
 	}
 	if value := c.FormValue("no_telepon"); value != "" {
-		pelaku.NoTelepon = value
+		korban.NoTelepon = value
 	}
 	if value := c.FormValue("pendidikan"); value != "" {
-		pelaku.Pendidikan = value
+		korban.Pendidikan = value
 	}
 	if value := c.FormValue("pekerjaan"); value != "" {
-		pelaku.Pekerjaan = value
+		korban.Pekerjaan = value
 	}
 	if value := c.FormValue("status_perkawinan"); value != "" {
-		pelaku.StatusPerkawinan = value
+		korban.StatusPerkawinan = value
 	}
 	if value := c.FormValue("kebangsaan"); value != "" {
-		pelaku.Kebangsaan = value
+		korban.Kebangsaan = value
 	}
 	if value := c.FormValue("hubungan_dengan_korban"); value != "" {
-		pelaku.HubunganDenganKorban = value
+		korban.HubunganDenganKorban = value
 	}
 	if value := c.FormValue("keterangan_lainnya"); value != "" {
-		pelaku.KeteranganLainnya = value
+		korban.KeteranganLainnya = value
 	}
 
-	file, err := c.FormFile("dokumentasi_pelaku")
+	file, err := c.FormFile("dokumentasi_korban")
 	if err == nil {
 		src, err := file.Open()
 		if err != nil {
@@ -174,15 +174,15 @@ func UpdatePelaku(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
 
-		pelaku.DokumentasiPelaku = imageURL
+		korban.DokumentasiPelaku = imageURL
 	}
 
-	pelaku.UpdatedAt = time.Now()
-	if err := database.DB.Save(&pelaku).Error; err != nil {
+	korban.UpdatedAt = time.Now()
+	if err := database.DB.Save(&korban).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to update pelaku",
+			Message: "Failed to update korban",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -191,7 +191,7 @@ func UpdatePelaku(c *fiber.Ctx) error {
 		Code:    http.StatusOK,
 		Status:  "success",
 		Message: "Pelaku updated successfully",
-		Data:    pelaku,
+		Data:    korban,
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }

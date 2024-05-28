@@ -14,6 +14,7 @@ func SetAdminRoutes(app *fiber.App) {
 
 	adminGroup.Get("/profile", handlers.GetUserProfile)
 	adminGroup.Put("/edit-profile", handlers.UpdateUserProfile)
+	adminGroup.Post("/change-password", handlers.ChangePassword)
 
 	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
 	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
@@ -28,6 +29,10 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Put("/edit-tracking-laporan/:id", handlers.UpdateTrackingLaporan)
 
 	adminGroup.Post("/create-pelaku-kekerasan", handlers.CreatePelaku)
+	adminGroup.Put("/edit-pelaku-kekerasan/:id", handlers.UpdatePelaku)
+
+	adminGroup.Post("/create-korban-kekerasan", handlers.CreateKorban)
+	adminGroup.Put("/edit-korban-kekerasan/:id", handlers.UpdateKorban)
 
 	adminGroup.Get("/violence-categories", handlers.GetAllViolenceCategories)
 	adminGroup.Get("/detail-violence-category/:id", handlers.GetViolenceCategoryByID)
@@ -65,29 +70,33 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Get("/kategori-kekerasan", handlers.GetAllViolenceCategories)
 	masyarakatGroup.Get("/kategori-kekerasan/:id", handlers.GetViolenceCategoryByID)
 
-	masyarakatGroup.Get("/janjitemus", handlers.GetUserJanjiTemus)
-	masyarakatGroup.Get("/detail-janjitemu/:id", handlers.GetJanjiTemuByID)
-	masyarakatGroup.Post("/create-janjitemu", handlers.MasyarakatCreateJanjiTemu)
-	masyarakatGroup.Put("/edit-janjitemu/:id", handlers.MasyarakatEditJanjiTemu)
-	masyarakatGroup.Put("/batal-janjitemu/:id", handlers.MasyarakatCancelJanjiTemu)
-
 	masyarakatGroup.Get("/laporans", handlers.GetUserReports)
 	masyarakatGroup.Post("/buat-laporan", handlers.CreateLaporan)
 	masyarakatGroup.Put("/edit-laporan/:no_registrasi", handlers.EditLaporan)
 	masyarakatGroup.Get("/detail-laporan/:no_registrasi", handlers.GetReportByNoRegistrasi)
 	masyarakatGroup.Put("batalkan-laporan/:no_registrasi", handlers.BatalkanLaporan)
 
-	masyarakatGroup.Post("/pelaku-kekerasan", handlers.CreatePelaku)
-	// masyarakatGroup.Put("/pelaku-kekerasan/:id", handlers.UpdatePelaku)
-	// masyarakatGroup.Delete("/pelaku-kekerasan/:id", handlers.DeletePelaku)
+	masyarakatGroup.Post("/create-pelaku-kekerasan", handlers.CreateKorban)
+	masyarakatGroup.Put("/edit-pelaku-kekerasan/:id", handlers.UpdateKorban)
+
+	masyarakatGroup.Post("/create-korban-kekerasan", handlers.CreateKorban)
+	masyarakatGroup.Put("/edit-korban-kekerasan/:id", handlers.UpdateKorban)
+
+	masyarakatGroup.Get("/janjitemus", handlers.GetUserJanjiTemus)
+	masyarakatGroup.Get("/detail-janjitemu/:id", handlers.GetJanjiTemuByID)
+	masyarakatGroup.Post("/create-janjitemu", handlers.MasyarakatCreateJanjiTemu)
+	masyarakatGroup.Put("/edit-janjitemu/:id", handlers.MasyarakatEditJanjiTemu)
+	masyarakatGroup.Put("/batal-janjitemu/:id", handlers.MasyarakatCancelJanjiTemu)
 
 	masyarakatGroup.Get("/content", handlers.GetAllContents)
+	masyarakatGroup.Get("/detail-content/:id", handlers.GetContentByID)
 }
 
 /*========= ||  Endpoint bisa di akses tanpa login || ====================*/
 func RoutesWithOutLogin(app *fiber.App) {
 	app.Get("/api/emergency-contact", handlers.EmergencyContact)
-	app.Get("/publik-content", handlers.GetAllContents)
+	app.Get("/api/publik-content", handlers.GetAllContents)
+	app.Get("/api/detail-content/:id", handlers.GetContentByID)
 	app.Get("/hello", handlers.HelloMasyarakat)
 
 }

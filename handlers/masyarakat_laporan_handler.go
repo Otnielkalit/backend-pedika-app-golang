@@ -404,19 +404,35 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		return c.Status(status).JSON(response)
 	}
 
+	// Fetch tracking laporan details
 	var trackingLaporan []models.TrackingLaporan
-	if err := db.Raw(`
-		SELECT
-			id, no_registrasi, keterangan, document, created_at, updated_at
-		FROM
-			tracking_laporans
-		WHERE
-			no_registrasi = ?
-	`, noRegistrasi).Scan(&trackingLaporan).Error; err != nil {
+	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&trackingLaporan).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
 			Message: "Failed to fetch tracking laporan details",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	// Fetch pelaku details
+	var pelaku []models.Pelaku
+	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&pelaku).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to fetch pelaku details",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	// Fetch korban details
+	var korban []models.Korban
+	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&korban).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to fetch korban details",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -434,14 +450,18 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 	}
 
-	// Response structure with user detail who viewed the report
+	// Response structure with all details
 	responseData := struct {
 		models.Laporan
 		TrackingLaporan []models.TrackingLaporan `json:"tracking_laporan"`
+		Pelaku          []models.Pelaku          `json:"pelaku"`
+		Korban          []models.Korban          `json:"korban"`
 		UserMelihat     *models.User             `json:"user_melihat,omitempty"`
 	}{
 		Laporan:         laporan,
 		TrackingLaporan: trackingLaporan,
+		Pelaku:          pelaku,
+		Korban:          korban,
 		UserMelihat:     nil,
 	}
 
@@ -459,7 +479,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(response)
 }
-
 
 /*=========================== BATALKAN LAPORAN BERDASARKAN NO_REGISTRASI =======================*/
 func BatalkanLaporan(c *fiber.Ctx) error {

@@ -9,10 +9,10 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/crypto v0.19.0
+	golang.org/x/crypto v0.23.0
 	gorm.io/datatypes v1.2.0
 	gorm.io/driver/mysql v1.5.4
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.25.10
 )
 
 require (
@@ -31,5 +31,5 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.52.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 )

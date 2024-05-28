@@ -72,7 +72,6 @@ func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 	var laporan models.Laporan
 	db := database.GetGormDBInstance()
 
-	// Preload the necessary related data
 	if err := db.
 		Preload("User").
 		Preload("ViolenceCategory").
@@ -104,7 +103,26 @@ func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
-	// Fetch the user details who viewed the report
+	var pelaku []models.Pelaku
+	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&pelaku).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to fetch pelaku details",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	var korban []models.Korban
+	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&korban).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to fetch korban details",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
 	var userMelihat models.User
 	if laporan.UserIDMelihat != nil {
 		if err := db.First(&userMelihat, *laporan.UserIDMelihat).Error; err != nil {
@@ -117,18 +135,20 @@ func GetLaporanByNoRegistrasi(c *fiber.Ctx) error {
 		}
 	}
 
-	// Response structure with user detail who viewed the report
 	responseData := struct {
 		models.Laporan
 		TrackingLaporan []models.TrackingLaporan `json:"tracking_laporan"`
+		Pelaku          []models.Pelaku          `json:"pelaku"`
+		Korban          []models.Korban          `json:"korban"`
 		UserMelihat     *models.User             `json:"user_melihat,omitempty"`
 	}{
 		Laporan:         laporan,
 		TrackingLaporan: trackingLaporan,
+		Pelaku:          pelaku,
+		Korban:          korban,
 		UserMelihat:     nil,
 	}
 
-	// If there's a user who viewed the report, add their details
 	if laporan.UserIDMelihat != nil {
 		responseData.UserMelihat = &userMelihat
 	}
