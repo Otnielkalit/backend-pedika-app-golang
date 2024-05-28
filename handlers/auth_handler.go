@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -30,11 +29,11 @@ type Response struct {
 
 /*|| ========================= REGISTER =================================== ||*/
 
-func isPhoneNumberValid(phoneNumber string) bool {
-	pattern := `^08[0-9]{9,11}$`
-	matched, _ := regexp.MatchString(pattern, phoneNumber)
-	return matched
-}
+// func isPhoneNumberValid(phoneNumber string) bool {
+// 	pattern := `^08[0-9]{9,11}$`
+// 	matched, _ := regexp.MatchString(pattern, phoneNumber)
+// 	return matched
+// }
 
 func RegisterUser(c *fiber.Ctx) error {
 	var user models.User
@@ -49,9 +48,9 @@ func RegisterUser(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(Response{Success: 0, Message: "Email is already registered", Data: nil})
 	}
 
-	if !isPhoneNumberValid(user.PhoneNumber) {
-		return c.Status(http.StatusBadRequest).JSON(Response{Success: 0, Message: "Invalid phone number format", Data: nil})
-	}
+	// if !isPhoneNumberValid(user.PhoneNumber) {
+	// 	return c.Status(http.StatusBadRequest).JSON(Response{Success: 0, Message: "Invalid phone number format", Data: nil})
+	// }
 
 	if isPhoneNumberExists(user.PhoneNumber) {
 		return c.Status(http.StatusBadRequest).JSON(Response{Success: 0, Message: "Phone number is already registered", Data: nil})
