@@ -368,6 +368,7 @@ func GetReportsByUserID(userID uint) ([]map[string]interface{}, error) {
 			"alamat_tkp":            report.AlamatTKP,
 			"alamat_detail_tkp":     report.AlamatDetailTKP,
 			"kronologis_kasus":      report.KronologisKasus,
+			"status":                report.Status,
 			"dokumentasi":           report.Dokumentasi,
 			"created_at":            report.CreatedAt,
 			"updated_at":            report.UpdatedAt,
@@ -414,8 +415,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
-
-	// Fetch pelaku details
 	var pelaku []models.Pelaku
 	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&pelaku).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -425,8 +424,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
-
-	// Fetch korban details
 	var korban []models.Korban
 	if err := db.Where("no_registrasi = ?", noRegistrasi).Find(&korban).Error; err != nil {
 		response := helper.ResponseWithOutData{
@@ -436,8 +433,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
-
-	// Fetch the user details who viewed the report
 	var userMelihat models.User
 	if laporan.UserIDMelihat != nil {
 		if err := db.First(&userMelihat, *laporan.UserIDMelihat).Error; err != nil {
@@ -449,8 +444,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
 	}
-
-	// Response structure with all details
 	responseData := struct {
 		models.Laporan
 		TrackingLaporan []models.TrackingLaporan `json:"tracking_laporan"`
@@ -464,8 +457,6 @@ func GetReportByNoRegistrasi(c *fiber.Ctx) error {
 		Korban:          korban,
 		UserMelihat:     nil,
 	}
-
-	// If there's a user who viewed the report, add their details
 	if laporan.UserIDMelihat != nil {
 		responseData.UserMelihat = &userMelihat
 	}

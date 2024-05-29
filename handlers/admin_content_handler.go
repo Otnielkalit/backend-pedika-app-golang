@@ -4,14 +4,18 @@ import (
 	"backend-pedika-fiber/database"
 	"backend-pedika-fiber/helper"
 	"backend-pedika-fiber/models"
+	"errors"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 func GetAllContents(c *fiber.Ctx) error {
 	var contents []models.Content
-	if err := database.DB.Find(&contents).Error; err != nil {
+	if err := database.DB.Preload("ViolenceCategory").Find(&contents).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
@@ -33,7 +37,7 @@ func GetContentByID(c *fiber.Ctx) error {
 	contentID := c.Params("id")
 
 	var content models.Content
-	if err := database.DB.First(&content, contentID).Error; err != nil {
+	if err := database.DB.Preload("ViolenceCategory").First(&content, contentID).Error; err != nil {
 		return c.Status(http.StatusNotFound).JSON(fiber.Map{
 			"error": "Content not found",
 		})
@@ -58,7 +62,6 @@ func CreateContent(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
-
 	file, err := c.FormFile("image_content")
 	if err != nil {
 		response := helper.ResponseWithOutData{
@@ -79,7 +82,6 @@ func CreateContent(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 	defer src.Close()
-
 	imageURL, err := helper.UploadFileToCloudinary(src, file.Filename)
 	if err != nil {
 		response := helper.ResponseWithOutData{
@@ -89,24 +91,57 @@ func CreateContent(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
-
 	content.ImageContent = imageURL
 	content.Judul = c.FormValue("judul")
 	content.IsiContent = c.FormValue("isi_content")
-
-	if err := database.DB.Create(&content).Error; err != nil {
+	violenceCategoryID, err := strconv.ParseInt(c.FormValue("violence_category_id"), 10, 64)
+	if err != nil || violenceCategoryID == 0 {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "Invalid or missing violence category ID",
+		}
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+	var violenceCategory models.ViolenceCategory
+	if err := database.DB.First(&violenceCategory, violenceCategoryID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusBadRequest,
+				Status:  "error",
+				Message: "Violence category not found",
+			}
+			return c.Status(http.StatusBadRequest).JSON(response)
+		}
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create violence category",
+			Message: "Failed to check violence category",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
+	content.ViolenceCategoryID = uint(violenceCategoryID)
+	if err := database.DB.Create(&content).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to create content",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+	if err := database.DB.Preload("ViolenceCategory").First(&content, content.ID).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to load content with violence category",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
-		Message: "Violence category created successfully",
+		Message: "Content created successfully",
 		Data:    content,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
@@ -114,50 +149,118 @@ func CreateContent(c *fiber.Ctx) error {
 
 func UpdateContent(c *fiber.Ctx) error {
 	contentID := c.Params("id")
+
+	// Fetch existing content from the database
 	var existingContent models.Content
-	if err := database.DB.First(&existingContent, contentID).Error; err != nil {
-		return c.Status(http.StatusNotFound).JSON(fiber.Map{
-			"error": "Content not found",
-		})
+	if err := database.DB.Preload("ViolenceCategory").First(&existingContent, contentID).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusNotFound,
+			Status:  "error",
+			Message: "Content not found",
+		}
+		return c.Status(http.StatusNotFound).JSON(response)
 	}
-	var updatedContent models.Content
-	if err := c.BodyParser(&updatedContent); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+
+	// Parse form data
+	judul := c.FormValue("judul")
+	if judul != "" {
+		existingContent.Judul = judul
 	}
-	if updatedContent.ImageContent != "" {
-		file, err := c.FormFile("image_content")
-		if err != nil {
-			return c.Status(http.StatusBadRequest).JSON(fiber.Map{
-				"error": "Image file not provided",
-			})
+
+	isiContent := c.FormValue("isi_content")
+	if isiContent != "" {
+		existingContent.IsiContent = isiContent
+	}
+
+	violenceCategoryID := c.FormValue("violence_category_id")
+	if violenceCategoryID != "" {
+		vcID, err := strconv.ParseInt(violenceCategoryID, 10, 64)
+		if err != nil || vcID == 0 {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusBadRequest,
+				Status:  "error",
+				Message: "Invalid violence category ID",
+			}
+			return c.Status(http.StatusBadRequest).JSON(response)
 		}
 
+		// Check if the violence category exists in the database
+		var violenceCategory models.ViolenceCategory
+		if err := database.DB.First(&violenceCategory, vcID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				response := helper.ResponseWithOutData{
+					Code:    http.StatusBadRequest,
+					Status:  "error",
+					Message: "Violence category not found",
+				}
+				return c.Status(http.StatusBadRequest).JSON(response)
+			}
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to check violence category",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
+		}
+		existingContent.ViolenceCategoryID = uint(vcID)
+	}
+
+	// Handle image file if provided
+	file, err := c.FormFile("image_content")
+	if err == nil {
 		src, err := file.Open()
 		if err != nil {
-			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to open image file",
-			})
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to open image file",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
 		defer src.Close()
 
 		imageURL, err := helper.UploadFileToCloudinary(src, file.Filename)
 		if err != nil {
-			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to upload image",
-			})
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to upload image",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
-		updatedContent.ImageContent = imageURL
+		existingContent.ImageContent = imageURL
 	}
-	if err := database.DB.Model(&models.Content{}).Where("id = ?", contentID).Updates(&updatedContent).Error; err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update content",
-		})
+
+	// Update timestamp
+	existingContent.UpdatedAt = time.Now()
+
+	// Save updated content to the database
+	if err := database.DB.Save(&existingContent).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to update content",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
-	return c.Status(http.StatusOK).JSON(fiber.Map{
-		"message": "Content updated successfully",
-	})
+
+	// Reload content with related ViolenceCategory to include in response
+	if err := database.DB.Preload("ViolenceCategory").First(&existingContent, contentID).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to load content with violence category",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Content updated successfully",
+		Data:    existingContent,
+	}
+	return c.Status(http.StatusOK).JSON(response)
 }
 
 func DeleteContent(c *fiber.Ctx) error {
