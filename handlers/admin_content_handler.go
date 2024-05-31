@@ -87,7 +87,7 @@ func CreateContent(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to upload image",
+			Message: "Gagal Mengupload Gambar",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -99,7 +99,7 @@ func CreateContent(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusBadRequest,
 			Status:  "error",
-			Message: "Invalid or missing violence category ID",
+			Message: "Id Kategory Kekerasan Tidak Ditemukan ",
 		}
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
@@ -109,7 +109,7 @@ func CreateContent(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusBadRequest,
 				Status:  "error",
-				Message: "Violence category not found",
+				Message: "Kategori Kekerasan Tidak ditemukan",
 			}
 			return c.Status(http.StatusBadRequest).JSON(response)
 		}
@@ -126,7 +126,7 @@ func CreateContent(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create content",
+			Message: "Gagal Membuat Konten",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -141,7 +141,7 @@ func CreateContent(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
-		Message: "Content created successfully",
+		Message: "Berhasil Membuat Konten",
 		Data:    content,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
@@ -156,7 +156,7 @@ func UpdateContent(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusNotFound,
 			Status:  "error",
-			Message: "Content not found",
+			Message: "Konten Tidak ada",
 		}
 		return c.Status(http.StatusNotFound).JSON(response)
 	}
@@ -174,12 +174,12 @@ func UpdateContent(c *fiber.Ctx) error {
 
 	violenceCategoryID := c.FormValue("violence_category_id")
 	if violenceCategoryID != "" {
-		vcID, err := strconv.ParseInt(violenceCategoryID, 10, 64)
-		if err != nil || vcID == 0 {
+		vcID, err := strconv.ParseUint(violenceCategoryID, 10, 64)
+		if err != nil {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusBadRequest,
 				Status:  "error",
-				Message: "Invalid violence category ID",
+				Message: "Kategori ID Salah",
 			}
 			return c.Status(http.StatusBadRequest).JSON(response)
 		}
@@ -191,14 +191,14 @@ func UpdateContent(c *fiber.Ctx) error {
 				response := helper.ResponseWithOutData{
 					Code:    http.StatusBadRequest,
 					Status:  "error",
-					Message: "Violence category not found",
+					Message: "Tidak Dapat Mencari Kategori kekerasan",
 				}
 				return c.Status(http.StatusBadRequest).JSON(response)
 			}
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to check violence category",
+				Message: "Gagal Memeriksa Kategori kekerasan",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -213,7 +213,7 @@ func UpdateContent(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to open image file",
+				Message: "Gagal Membuka File Gambar",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -224,7 +224,7 @@ func UpdateContent(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to upload image",
+				Message: "Gagal Mengupload Gambar",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -239,7 +239,7 @@ func UpdateContent(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to update content",
+			Message: "Gagal Mengupdate Konten",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -249,7 +249,7 @@ func UpdateContent(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to load content with violence category",
+			Message: "Gagal Memuat Konten dengan Kategori Kekerasan",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -257,7 +257,7 @@ func UpdateContent(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Content updated successfully",
+		Message: "Berhasil Mengupdate Konten",
 		Data:    existingContent,
 	}
 	return c.Status(http.StatusOK).JSON(response)
@@ -277,6 +277,6 @@ func DeleteContent(c *fiber.Ctx) error {
 		})
 	}
 	return c.Status(http.StatusOK).JSON(fiber.Map{
-		"message": "Content deleted successfully",
+		"message": "Kontent Berhasil Dihapus",
 	})
 }

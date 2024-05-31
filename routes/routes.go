@@ -18,6 +18,7 @@ func SetAdminRoutes(app *fiber.App) {
 
 	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
 	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
+	adminGroup.Get("/emergency-contact/:id", handlers.ShowEmergencyContactByID)
 
 	adminGroup.Get("/laporans", handlers.GetLatestReports)
 	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
@@ -66,6 +67,7 @@ func SetMasyarakatRoutes(app *fiber.App) {
 
 	masyarakatGroup.Get("/profile", handlers.GetUserProfile)
 	masyarakatGroup.Put("/edit-profile", handlers.UpdateUserProfile)
+	masyarakatGroup.Put("/change-password", handlers.ChangePassword)
 
 	masyarakatGroup.Get("/kategori-kekerasan", handlers.GetAllViolenceCategories)
 	masyarakatGroup.Get("/kategori-kekerasan/:id", handlers.GetViolenceCategoryByID)
@@ -75,6 +77,9 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Put("/edit-laporan/:no_registrasi", handlers.EditLaporan)
 	masyarakatGroup.Get("/detail-laporan/:no_registrasi", handlers.GetReportByNoRegistrasi)
 	masyarakatGroup.Put("batalkan-laporan/:no_registrasi", handlers.BatalkanLaporan)
+
+	masyarakatGroup.Post("/create-korban-kekerasan", handlers.CreateKorban)
+	masyarakatGroup.Put("/edit-korban-kekerasan/:id", handlers.UpdateKorban)
 
 	masyarakatGroup.Post("/create-pelaku-kekerasan", handlers.CreateKorban)
 	masyarakatGroup.Put("/edit-pelaku-kekerasan/:id", handlers.UpdateKorban)

@@ -58,7 +58,7 @@ func CreatePelaku(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to upload image",
+				Message: "Gagal Mengupload Gambar",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -71,14 +71,14 @@ func CreatePelaku(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create pelaku",
+			Message: "gagal Menambahkan Data pelaku",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
-		Message: "Pelaku created successfully",
+		Message: "Berhasil Menambah Data Pelaku",
 		Data:    pelaku,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
@@ -169,7 +169,7 @@ func UpdatePelaku(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to upload image",
+				Message: "Gagal Mengupload Gambat",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -182,7 +182,7 @@ func UpdatePelaku(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to update pelaku",
+			Message: "Gagal Mengupdate Data Pelaku",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -190,7 +190,7 @@ func UpdatePelaku(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Pelaku updated successfully",
+		Message: "Berhasil Mengupdated Data Pelaku",
 		Data:    pelaku,
 	}
 	return c.Status(http.StatusOK).JSON(response)

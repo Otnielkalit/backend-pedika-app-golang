@@ -57,7 +57,7 @@ func CreateLaporan(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusNotFound,
 			Status:  "error",
-			Message: "Violence category not found",
+			Message: "Kategori kekerasan yang anda pilih tidak ditemukan",
 		}
 		return c.Status(http.StatusNotFound).JSON(response)
 	}
@@ -324,10 +324,12 @@ func GetUserReports(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
+
+	db := database.GetGormDBInstance()
 	var formattedReports []map[string]interface{}
 	for _, report := range reports {
 		var violenceCategory models.ViolenceCategory
-		if err := database.GetGormDBInstance().First(&violenceCategory, report["violence_category_id"]).Error; err != nil {
+		if err := db.Where("id = ?", report["kategori_kekerasan_id"]).First(&violenceCategory).Error; err != nil {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
@@ -338,13 +340,13 @@ func GetUserReports(c *fiber.Ctx) error {
 		report["violence_category_detail"] = violenceCategory
 		formattedReports = append(formattedReports, report)
 	}
-
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
 		Message: "List of laporan by user",
 		Data:    formattedReports,
 	}
+
 	return c.Status(http.StatusOK).JSON(response)
 }
 
@@ -538,3 +540,4 @@ func BatalkanLaporan(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(response)
 }
+

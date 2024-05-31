@@ -32,5 +32,16 @@ func UpdateEmergencyContact(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Failed to update emergency contact", Data: nil})
 	}
 
-	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Emergency contact updated successfully", Data: existingEmergencyContact})
+	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Berhasil Mengupdate Kontak Darurat", Data: existingEmergencyContact})
+}
+
+func ShowEmergencyContactByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	var emergencyContact models.EmergencyContact
+	if err := database.DB.First(&emergencyContact, id).Error; err != nil {
+		return c.Status(http.StatusNotFound).JSON(Response{Success: 0, Message: "Emergency contact not found", Data: nil})
+	}
+
+	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Emergency contact retrieved successfully", Data: emergencyContact})
 }

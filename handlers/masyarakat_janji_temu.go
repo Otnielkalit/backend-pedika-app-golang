@@ -336,7 +336,7 @@ func AdminApproveJanjiTemu(c *fiber.Ctx) error {
 	response := helper.ResponseWithOutData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Status janji temu berhasil diubah menjadi Disetujui",
+		Message: "Janji Temu berhasil disetujui",
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
@@ -387,7 +387,7 @@ func AdminCancelJanjiTemu(c *fiber.Ctx) error {
 	response := helper.ResponseWithOutData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Janji temu canceled successfully",
+		Message: "Janji Temu Sudah Ditolak",
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }

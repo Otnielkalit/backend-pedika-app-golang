@@ -58,7 +58,7 @@ func CreateKorban(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to upload image",
+				Message: "Gagal Mengupload gambar",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -71,14 +71,14 @@ func CreateKorban(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create korban",
+			Message: "Gagal Menambah Data Korban",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
-		Message: "Pelaku created successfully",
+		Message: "Berhasil Menambah Data Korban",
 		Data:    korban,
 	}
 	return c.Status(http.StatusCreated).JSON(response)

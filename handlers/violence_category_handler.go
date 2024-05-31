@@ -5,6 +5,7 @@ import (
 	"backend-pedika-fiber/helper"
 	"backend-pedika-fiber/models"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -84,7 +85,7 @@ func CreateViolenceCategory(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to upload image",
+			Message: "Gagal Menguplaod gambar, coba beberapa saat",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -96,7 +97,7 @@ func CreateViolenceCategory(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create violence category",
+			Message: "Gagal memuat kategori kekerasan",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -104,7 +105,7 @@ func CreateViolenceCategory(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
-		Message: "Violence category created successfully",
+		Message: "Kategori Kekerasan Berhasil Dibuat",
 		Data:    category,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
@@ -143,7 +144,7 @@ func UpdateViolenceCategory(c *fiber.Ctx) error {
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusInternalServerError,
 				Status:  "error",
-				Message: "Failed to upload image",
+				Message: "Gagal Mengupload Gambar",
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
@@ -156,7 +157,7 @@ func UpdateViolenceCategory(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to update violence category",
+			Message: "Gagal Mengupdate kategori Kekerasan",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -164,7 +165,7 @@ func UpdateViolenceCategory(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Violence category updated successfully",
+		Message: "Berhasil Mengupdate ketegori kekerasan",
 		Data:    category,
 	}
 	return c.Status(http.StatusOK).JSON(response)
@@ -178,21 +179,29 @@ func DeleteViolenceCategory(c *fiber.Ctx) error {
 		return c.Status(http.StatusNotFound).JSON(helper.ResponseWithOutData{
 			Code:    http.StatusNotFound,
 			Status:  "error",
-			Message: "Violence category not found",
+			Message: "Kategori kekerasan tidak ditemukan",
 		})
 	}
 
 	if err := database.DB.Where("id = ?", categoryID).Delete(&models.ViolenceCategory{}).Error; err != nil {
+		// Handle foreign key constraint errors
+		if strings.Contains(err.Error(), "foreign key constraint fails") {
+			return c.Status(http.StatusBadRequest).JSON(helper.ResponseWithOutData{
+				Code:    http.StatusBadRequest,
+				Status:  "error",
+				Message: "Tidak dapat menghapus kategori: sedang digunakan dalam catatan lain",
+			})
+		}
 		return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to delete violence category",
+			Message: "Gagal menghapus kategori kekerasan: " + err.Error(),
 		})
 	}
 
 	return c.Status(http.StatusOK).JSON(helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Violence category deleted successfully",
+		Message: "Kategori kekerasan berhasil dihapus",
 	})
 }

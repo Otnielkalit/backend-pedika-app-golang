@@ -263,7 +263,7 @@ func AdminProsesLaporan(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusOK,
 		Status:  "success",
-		Message: "Laporan status updated to Diproses successfully",
+		Message: "Laporan Berhasil Diproses",
 		Data: fiber.Map{
 			"no_registrasi":  laporan.NoRegistrasi,
 			"status":         laporan.Status,

@@ -169,12 +169,12 @@ func LoginUser(c *fiber.Ctx) error {
 
 	user, err := getUserByCredentials(credentials)
 	if err != nil {
-		return c.Status(http.StatusUnauthorized).JSON(Response{Success: 0, Message: "Email or Username, or Phone Number or password is wrong", Data: nil, UserID: 0})
+		return c.Status(http.StatusUnauthorized).JSON(Response{Success: 0, Message: "Email atau Username, oataur Phone Number or password salah", Data: nil, UserID: 0})
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if err != nil {
-		return c.Status(http.StatusUnauthorized).JSON(Response{Success: 0, Message: "Email or Username, or Phone Number or password is wrong", Data: nil, UserID: 0})
+		return c.Status(http.StatusUnauthorized).JSON(Response{Success: 0, Message: "Email atau Username, oataur Phone Number or password salah", Data: nil, UserID: 0})
 	}
 
 	// Tidak ada pemanggilan fungsi VerifyToken di sini
@@ -189,7 +189,7 @@ func LoginUser(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Failed to fetch user details", Data: nil, UserID: 0})
 	}
 
-	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Login successful", Data: fullUser, Token: token})
+	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Anda Berhasil Login", Data: fullUser, Token: token})
 }
 
 func getUserByCredentials(credentials models.LoginCredentials) (models.User, error) {
