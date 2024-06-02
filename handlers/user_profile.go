@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
 
 	"backend-pedika-fiber/auth"
 	"backend-pedika-fiber/database"
@@ -133,8 +132,21 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 		existingUser.PhoneNumber = updateUser.PhoneNumber
 	}
 
-	if updateUser.PhotoProfile != "" {
-		imageUrl, err := helper.UploadFileToCloudinary(strings.NewReader(updateUser.PhotoProfile), "photo_profile")
+	file, err := c.FormFile("photo_profile")
+	if err == nil {
+		src, err := file.Open()
+		if err != nil {
+			tx.Rollback()
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusInternalServerError,
+				Status:  "error",
+				Message: "Failed to open photo profile",
+			}
+			return c.Status(http.StatusInternalServerError).JSON(response)
+		}
+		defer src.Close()
+
+		imageURL, err := helper.UploadFileToCloudinary(src, file.Filename)
 		if err != nil {
 			tx.Rollback()
 			response := helper.ResponseWithOutData{
@@ -144,10 +156,10 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 			}
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
-		existingUser.PhotoProfile = imageUrl
+		existingUser.PhotoProfile = imageURL
 	}
 
-	if updateUser.TanggalLahir.String() != "0001-01-01 00:00:00 +0000 UTC" {
+	if updateUser.TanggalLahir.String() != "" {
 		existingUser.TanggalLahir = updateUser.TanggalLahir
 	}
 
