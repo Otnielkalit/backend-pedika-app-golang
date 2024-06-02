@@ -24,12 +24,12 @@ func UpdateEmergencyContact(c *fiber.Ctx) error {
 
 	var existingEmergencyContact models.EmergencyContact
 	if err := database.DB.First(&existingEmergencyContact).Error; err != nil {
-		return c.Status(http.StatusNotFound).JSON(Response{Success: 0, Message: "Emergency contact not found", Data: nil})
+		return c.Status(http.StatusNotFound).JSON(Response{Success: 0, Message: "Kontak Darurat Tidak ditemukan", Data: nil})
 	}
 
 	existingEmergencyContact.Phone = updatedEmergencyContact.Phone
 	if err := database.DB.Save(&existingEmergencyContact).Error; err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Failed to update emergency contact", Data: nil})
+		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Gagal Mengupdate Kontak Darurat", Data: nil})
 	}
 
 	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Berhasil Mengupdate Kontak Darurat", Data: existingEmergencyContact})

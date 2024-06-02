@@ -87,7 +87,10 @@ func RegisterUser(c *fiber.Ctx) error {
 
 	user.ID = uint(userID)
 
-	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "User registered successfully", Data: user})
+	return c.Status(http.StatusOK).JSON(Response{
+		Success: 200,
+		Message: "User registered successfully",
+		Data:    user})
 }
 
 func isEmailExists(email string) bool {
@@ -211,7 +214,7 @@ func generateAuthToken(userID int64, role string) (string, error) {
 	if error != nil {
 		panic("Cannot Find ENV file")
 	}
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expirationTime := time.Now().Add(10 * time.Hour)
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     expirationTime.Unix(),

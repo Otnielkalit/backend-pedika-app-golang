@@ -18,7 +18,6 @@ func SetAdminRoutes(app *fiber.App) {
 
 	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
 	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
-	adminGroup.Get("/emergency-contact/:id", handlers.ShowEmergencyContactByID)
 
 	adminGroup.Get("/laporans", handlers.GetLatestReports)
 	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
@@ -31,6 +30,7 @@ func SetAdminRoutes(app *fiber.App) {
 
 	adminGroup.Post("/create-pelaku-kekerasan", handlers.CreatePelaku)
 	adminGroup.Put("/edit-pelaku-kekerasan/:id", handlers.UpdatePelaku)
+	adminGroup.Delete("/delete-pelaku-kekerasan/:id", handlers.DeletePelaku)
 
 	adminGroup.Post("/create-korban-kekerasan", handlers.CreateKorban)
 	adminGroup.Put("/edit-korban-kekerasan/:id", handlers.UpdateKorban)
@@ -103,5 +103,6 @@ func RoutesWithOutLogin(app *fiber.App) {
 	app.Get("/api/publik-content", handlers.GetAllContents)
 	app.Get("/api/detail-content/:id", handlers.GetContentByID)
 	app.Get("/hello", handlers.HelloMasyarakat)
-
+	app.Get("/api/publik/kategori-kekerasan", handlers.GetAllViolenceCategories)
+	app.Get("/api/publik/detail-kategori-kekerasan/:id", handlers.GetViolenceCategoryByID)
 }

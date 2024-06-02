@@ -91,7 +91,7 @@ func UpdatePelaku(c *fiber.Ctx) error {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusNotFound,
 			Status:  "error",
-			Message: "Pelaku not found",
+			Message: "Pelaku Tidak DItemukan",
 		}
 		return c.Status(http.StatusNotFound).JSON(response)
 	}
@@ -192,6 +192,35 @@ func UpdatePelaku(c *fiber.Ctx) error {
 		Status:  "success",
 		Message: "Berhasil Mengupdated Data Pelaku",
 		Data:    pelaku,
+	}
+	return c.Status(http.StatusOK).JSON(response)
+}
+
+func DeletePelaku(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var pelaku models.Pelaku
+	if err := database.DB.First(&pelaku, id).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusNotFound,
+			Status:  "error",
+			Message: "Pelaku Tidak Ditemukan",
+		}
+		return c.Status(http.StatusNotFound).JSON(response)
+	}
+
+	if err := database.DB.Delete(&pelaku).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Gagal Menghapus Data Pelaku",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response := helper.ResponseWithOutData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Berhasil Menghapus Data Pelaku",
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
