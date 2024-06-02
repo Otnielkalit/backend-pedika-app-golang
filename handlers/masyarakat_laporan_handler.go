@@ -541,3 +541,51 @@ func BatalkanLaporan(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(response)
 }
 
+func SelesaikanLaporan(c *fiber.Ctx) error {
+	noRegistrasi := c.Params("no_registrasi")
+
+	var laporan models.Laporan
+	db := database.GetGormDBInstance()
+	if err := db.Where("no_registrasi = ?", noRegistrasi).First(&laporan).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusNotFound,
+				Status:  "error",
+				Message: "Laporan not found",
+			}
+			return c.Status(http.StatusNotFound).JSON(response)
+		}
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to retrieve laporan",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	laporan.Status = "Selesai"
+	laporan.UpdatedAt = time.Now()
+
+	if err := db.Save(&laporan).Error; err != nil {
+		response := helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to update laporan",
+		}
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response := helper.ResponseWithData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Laporan completed successfully",
+		Data: fiber.Map{
+			"no_registrasi": laporan.NoRegistrasi,
+			"status":        laporan.Status,
+			"updated_at":    laporan.UpdatedAt,
+		},
+	}
+
+	return c.Status(http.StatusOK).JSON(response)
+}
+

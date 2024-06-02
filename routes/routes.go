@@ -77,6 +77,7 @@ func SetMasyarakatRoutes(app *fiber.App) {
 	masyarakatGroup.Put("/edit-laporan/:no_registrasi", handlers.EditLaporan)
 	masyarakatGroup.Get("/detail-laporan/:no_registrasi", handlers.GetReportByNoRegistrasi)
 	masyarakatGroup.Put("batalkan-laporan/:no_registrasi", handlers.BatalkanLaporan)
+	masyarakatGroup.Put("laporan-selesai/:no_registrasi", handlers.SelesaikanLaporan)
 
 	masyarakatGroup.Post("/create-korban-kekerasan", handlers.CreateKorban)
 	masyarakatGroup.Put("/edit-korban-kekerasan/:id", handlers.UpdateKorban)
