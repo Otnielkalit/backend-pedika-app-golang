@@ -162,7 +162,7 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 
 	tanggalLahirStr := c.FormValue("tanggal_lahir")
 	if tanggalLahirStr != "" {
-		tanggalLahir, err := time.Parse("2006-01-02T15:04:05", tanggalLahirStr)
+		tanggalLahir, err := time.Parse("2006-01-02", tanggalLahirStr)
 		if err != nil {
 			tx.Rollback()
 			response := helper.ResponseWithOutData{
@@ -211,4 +211,5 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
+
 
