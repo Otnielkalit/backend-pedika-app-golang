@@ -162,13 +162,13 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 
 	tanggalLahirStr := c.FormValue("tanggal_lahir")
 	if tanggalLahirStr != "" {
-		tanggalLahir, err := time.Parse("2006-01-02", tanggalLahirStr)
+		tanggalLahir, err := time.Parse("02-01-2006", tanggalLahirStr)
 		if err != nil {
 			tx.Rollback()
 			response := helper.ResponseWithOutData{
 				Code:    http.StatusBadRequest,
 				Status:  "error",
-				Message: "Invalid date format",
+				Message: "Invalid date format, use dd-MM-yyyy",
 			}
 			return c.Status(http.StatusBadRequest).JSON(response)
 		}
@@ -211,5 +211,3 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
-
-
