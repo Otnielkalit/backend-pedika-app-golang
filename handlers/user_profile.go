@@ -133,6 +133,10 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 		existingUser.PhoneNumber = updateUser.PhoneNumber
 	}
 
+	if updateUser.NIK != 0 && updateUser.NIK != existingUser.NIK {
+		existingUser.NIK = updateUser.NIK
+	}
+
 	file, err := c.FormFile("photo_profile")
 	if err == nil {
 		src, err := file.Open()
@@ -190,6 +194,8 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 	if updateUser.JenisKelamin != "" {
 		existingUser.JenisKelamin = updateUser.JenisKelamin
 	}
+
+	existingUser.UpdatedAt = time.Now()
 
 	if err := tx.Save(&existingUser).Error; err != nil {
 		tx.Rollback()
