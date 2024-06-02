@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"backend-pedika-fiber/auth"
 	"backend-pedika-fiber/database"
@@ -159,8 +160,19 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 		existingUser.PhotoProfile = imageURL
 	}
 
-	if updateUser.TanggalLahir.String() != "" {
-		existingUser.TanggalLahir = updateUser.TanggalLahir
+	tanggalLahirStr := c.FormValue("tanggal_lahir")
+	if tanggalLahirStr != "" {
+		tanggalLahir, err := time.Parse("2006-01-02T15:04:05", tanggalLahirStr)
+		if err != nil {
+			tx.Rollback()
+			response := helper.ResponseWithOutData{
+				Code:    http.StatusBadRequest,
+				Status:  "error",
+				Message: "Invalid date format",
+			}
+			return c.Status(http.StatusBadRequest).JSON(response)
+		}
+		existingUser.TanggalLahir = tanggalLahir
 	}
 
 	if updateUser.Alamat != "" {
@@ -199,3 +211,4 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(response)
 }
+

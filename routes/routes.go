@@ -23,6 +23,7 @@ func SetAdminRoutes(app *fiber.App) {
 	adminGroup.Get("/detail-laporan/:no_registrasi", handlers.GetLaporanByNoRegistrasi)
 	adminGroup.Put("/lihat-laporan/:no_registrasi", handlers.AdminLihatLaporan)
 	adminGroup.Put("/proses-laporan/:no_registrasi", handlers.AdminProsesLaporan)
+	adminGroup.Put("laporan-selesai/:no_registrasi", handlers.SelesaikanLaporan)
 
 	adminGroup.Post("/create-tracking-laporan", handlers.CreateTrackingLaporan)
 	adminGroup.Delete("/delete-tracking-laporan/:id", handlers.DeleteTrackingLaporan)

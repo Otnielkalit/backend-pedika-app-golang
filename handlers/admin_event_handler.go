@@ -98,7 +98,7 @@ func CreateEvent(c *fiber.Ctx) error {
 	event.NamaEvent = c.FormValue("nama_event")
 	event.DeskripsiEvent = c.FormValue("deskripsi_event")
 	tanggalPelaksanaanStr := c.FormValue("tanggal_pelaksanaan")
-	tanggalPelaksanaan, err := time.Parse("2006-01-02T15:04:05", tanggalPelaksanaanStr) // Format tanggal hari-bulan-tahun
+	tanggalPelaksanaan, err := time.Parse("2006-01-02T15:04:05", tanggalPelaksanaanStr)
 	if err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusBadRequest,
