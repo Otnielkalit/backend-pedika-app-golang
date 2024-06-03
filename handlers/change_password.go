@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"backend-pedika-fiber/auth"
 	"backend-pedika-fiber/database"
+	"backend-pedika-fiber/helper"
 	"backend-pedika-fiber/models"
+	"log"
 	"net/http"
 	"time"
 
@@ -11,46 +14,94 @@ import (
 )
 
 type ChangePasswordRequest struct {
-	UserID          int    `json:"user_id"`
 	OldPassword     string `json:"old_password"`
 	NewPassword     string `json:"new_password"`
 	ConfirmPassword string `json:"confirm_password"`
 }
 
 func ChangePassword(c *fiber.Ctx) error {
+	// Parse the request body
 	var req ChangePasswordRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(Response{Success: 0, Message: "Invalid request body", Data: nil})
+		return c.Status(http.StatusBadRequest).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "Invalid request body",
+		})
 	}
 
+	// Validate new password and confirmation password
 	if req.NewPassword != req.ConfirmPassword {
-		return c.Status(http.StatusBadRequest).JSON(Response{Success: 0, Message: "New password and confirmation password do not match", Data: nil})
+		return c.Status(http.StatusBadRequest).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusBadRequest,
+			Status:  "error",
+			Message: "New password and confirmation password do not match",
+		})
 	}
 
-	user, err := getUserID(req.UserID)
+	// Extract user ID from the token
+	userID, err := auth.ExtractUserIDFromToken(c.Get("Authorization"))
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "User not found", Data: nil})
+		return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to get user ID",
+		})
 	}
 
+	// Retrieve the user from the database
+	user, err := getUserID(userID)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "User not found",
+		})
+	}
+
+	// Debugging: Print user details and the provided old password
+	// REMOVE THESE LINES IN PRODUCTION
+	log.Println("Stored password hash:", user.Password)
+	log.Println("Provided old password:", req.OldPassword)
+
+	// Compare old password with the stored password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword))
 	if err != nil {
-		return c.Status(http.StatusUnauthorized).JSON(Response{Success: 0, Message: "Old password is incorrect", Data: nil})
+		return c.Status(http.StatusUnauthorized).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusUnauthorized,
+			Status:  "error",
+			Message: "Old password is incorrect",
+		})
 	}
 
-	hashedNewPassword, err := hasingPassword(req.NewPassword)
+	// Hash the new password
+	hashedNewPassword, err := HashPassword(req.NewPassword)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Failed to hash new password", Data: nil})
+		return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to hash new password",
+		})
 	}
 
-	err = updatePasswordInDatabase(req.UserID, hashedNewPassword)
+	// Update the password in the database
+	err = updatePasswordInDatabase(userID, hashedNewPassword)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(Response{Success: 0, Message: "Failed to update password", Data: nil})
+		return c.Status(http.StatusInternalServerError).JSON(helper.ResponseWithOutData{
+			Code:    http.StatusInternalServerError,
+			Status:  "error",
+			Message: "Failed to update password",
+		})
 	}
 
-	return c.Status(http.StatusOK).JSON(Response{Success: 1, Message: "Password changed successfully", Data: nil})
+	return c.Status(http.StatusOK).JSON(helper.ResponseWithOutData{
+		Code:    http.StatusOK,
+		Status:  "success",
+		Message: "Password changed successfully",
+	})
 }
 
-func getUserID(userID int) (models.User, error) {
+func getUserID(userID uint) (models.User, error) {
 	db := database.GetGormDBInstance()
 
 	var user models.User
@@ -61,7 +112,7 @@ func getUserID(userID int) (models.User, error) {
 	return user, nil
 }
 
-func updatePasswordInDatabase(userID int, newPassword string) error {
+func updatePasswordInDatabase(userID uint, newPassword string) error {
 	db := database.GetGormDBInstance()
 
 	err := db.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
@@ -74,9 +125,10 @@ func updatePasswordInDatabase(userID int, newPassword string) error {
 	return nil
 }
 
-func hasingPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Println("Error hashing password:", err)
 		return "", err
 	}
 	return string(hashedPassword), nil

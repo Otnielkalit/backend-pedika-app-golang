@@ -14,7 +14,7 @@ func SetAdminRoutes(app *fiber.App) {
 
 	adminGroup.Get("/profile", handlers.GetUserProfile)
 	adminGroup.Put("/edit-profile", handlers.UpdateUserProfile)
-	adminGroup.Post("/change-password", handlers.ChangePassword)
+	adminGroup.Put("/change-password", handlers.ChangePassword)
 
 	adminGroup.Get("/emergency-contact", handlers.GetEmergencyContact)
 	adminGroup.Put("/emergency-contact-edit", handlers.UpdateEmergencyContact)
@@ -104,6 +104,8 @@ func RoutesWithOutLogin(app *fiber.App) {
 	app.Get("/api/emergency-contact", handlers.EmergencyContact)
 	app.Get("/api/publik-content", handlers.GetAllContents)
 	app.Get("/api/detail-content/:id", handlers.GetContentByID)
+	app.Get("api/publik-event", handlers.GetAllEvent)
+	app.Get("/api/detail-event/:id", handlers.GetEventByID)
 	app.Get("/hello", handlers.HelloMasyarakat)
 	app.Get("/api/publik/kategori-kekerasan", handlers.GetAllViolenceCategories)
 	app.Get("/api/publik/detail-kategori-kekerasan/:id", handlers.GetViolenceCategoryByID)

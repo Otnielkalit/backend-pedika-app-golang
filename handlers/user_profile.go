@@ -107,6 +107,8 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 		existingUser.Username = updateUser.Username
 	}
 
+	
+
 	if updateUser.Email != "" && updateUser.Email != existingUser.Email {
 		if checkEmailExists(tx, updateUser.Email) {
 			tx.Rollback()
@@ -181,6 +183,10 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 
 	if updateUser.Alamat != "" {
 		existingUser.Alamat = updateUser.Alamat
+	}
+
+	if updateUser.FullName != "" {
+		existingUser.FullName = updateUser.FullName
 	}
 
 	if updateUser.FullName != "" {

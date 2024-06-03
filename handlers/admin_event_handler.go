@@ -98,22 +98,41 @@ func CreateEvent(c *fiber.Ctx) error {
 	event.NamaEvent = c.FormValue("nama_event")
 	event.DeskripsiEvent = c.FormValue("deskripsi_event")
 	tanggalPelaksanaanStr := c.FormValue("tanggal_pelaksanaan")
-	tanggalPelaksanaan, err := time.Parse("2006-01-02T15:04:05", tanggalPelaksanaanStr)
-	if err != nil {
+
+	var parsedDate time.Time
+	var parseErr error
+
+	formats := []string{
+		"2006-01-02T15:04",    // Format expected from datetime-local input
+		"2006-01-02 15:04:00", // Format received in the log
+		"2006-01-02 15:04",    // Without seconds
+		"02/01/2006 15:04",    // Another possible format
+	}
+
+	for _, format := range formats {
+		parsedDate, parseErr = time.Parse(format, tanggalPelaksanaanStr)
+		if parseErr == nil {
+			break
+		}
+		fmt.Println("Error parsing date with format", format, ":", parseErr)
+	}
+
+	if parseErr != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusBadRequest,
 			Status:  "error",
-			Message: "Invalid date format",
+			Message: "Format tanggal tidak valid. Format yang diharapkan adalah YYYY-MM-DDTHH:MM",
 		}
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
-	event.TanggalPelaksanaan = tanggalPelaksanaan
+
+	event.TanggalPelaksanaan = parsedDate
 
 	if err := database.DB.Create(&event).Error; err != nil {
 		response := helper.ResponseWithOutData{
 			Code:    http.StatusInternalServerError,
 			Status:  "error",
-			Message: "Failed to create violence category",
+			Message: "Failed to create event",
 		}
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -121,7 +140,7 @@ func CreateEvent(c *fiber.Ctx) error {
 	response := helper.ResponseWithData{
 		Code:    http.StatusCreated,
 		Status:  "success",
-		Message: "Violence category created successfully",
+		Message: "Berhasil membuat Content",
 		Data:    event,
 	}
 	return c.Status(http.StatusCreated).JSON(response)
