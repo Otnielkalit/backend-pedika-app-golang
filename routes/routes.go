@@ -3,6 +3,7 @@ package routes
 import (
 	"backend-pedika-fiber/handlers"
 	"backend-pedika-fiber/middleware"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -101,6 +102,11 @@ func SetMasyarakatRoutes(app *fiber.App) {
 
 /*========= ||  Endpoint bisa di akses tanpa login || ====================*/
 func RoutesWithOutLogin(app *fiber.App) {
+	app.Get("/", func(c *fiber.Ctx) error {
+		fmt.Println("succes")
+		return c.Status(200).SendString("oke manta")
+	})
+
 	app.Get("/api/emergency-contact", handlers.EmergencyContact)
 	app.Get("/api/publik-content", handlers.GetAllContents)
 	app.Get("/api/detail-content/:id", handlers.GetContentByID)
